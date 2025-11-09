@@ -72,10 +72,14 @@ const link = Astro.url.searchParams.get("redir");
             if (iframeWin!.__uv) {
                 return iframeWin!.__uv.location.href
             }
-            else {
+            else if (iframeWin!.$scramjet?.config?.prefix) {
                 return iframeWin!.location.href
                     .replace(iframeWin!.location.origin, '')
                     .replace(iframeWin!.$scramjet.config.prefix, '')
+            }
+            else {
+                // Fallback if neither proxy is available
+                return iframeWin!.location.href;
             }
         }
 
