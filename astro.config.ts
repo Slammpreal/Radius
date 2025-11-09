@@ -8,11 +8,9 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 import playformCompress from "@playform/compress";
 import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
 import { scramjetPath } from "@mercuryworkshop/scramjet/path";
-//@ts-expect-error No types
 import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { libcurlPath } from "@mercuryworkshop/libcurl-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
-//@ts-expect-error No types
 import { bareModulePath } from "@mercuryworkshop/bare-as-module3";
 
 const viteWispServer = (): Plugin => {
@@ -31,39 +29,16 @@ const viteWispServer = (): Plugin => {
 export default defineConfig({
     vite: {
         plugins: [
-            //@ts-ignore
             tailwindcss(),
-            //@ts-ignore
             viteWispServer(),
-            //@ts-ignore
             viteStaticCopy({
                 targets: [
-                    { src: `${uvPath}/**/*`.replace(/\\/g, "/"), dest: "vu", overwrite: false },
-                    {
-                        src: `${scramjetPath}/**/*`.replace(/\\/g, "/"),
-                        dest: "marcs",
-                        overwrite: false
-                    },
-                    {
-                        src: `${baremuxPath}/**/*`.replace(/\\/g, "/"),
-                        dest: "erab",
-                        overwrite: false
-                    },
-                    {
-                        src: `${epoxyPath}/**/*`.replace(/\\/g, "/"),
-                        dest: "epoxy",
-                        overwrite: false
-                    },
-                    {
-                        src: `${libcurlPath}/**/*`.replace(/\\/g, "/"),
-                        dest: "libcurl",
-                        overwrite: false
-                    },
-                    {
-                        src: `${bareModulePath}/**/*`.replace(/\\/g, "/"),
-                        dest: "baremod",
-                        overwrite: false
-                    }
+                    { src: `${uvPath}/**/*`.replace(/\\/g, "/"), dest: "vu" },
+                    { src: `${scramjetPath}/**/*`.replace(/\\/g, "/"), dest: "marcs" },
+                    { src: `${baremuxPath}/**/*`.replace(/\\/g, "/"), dest: "erab" },
+                    { src: `${epoxyPath}/**/*`.replace(/\\/g, "/"), dest: "epoxy" },
+                    { src: `${libcurlPath}/**/*`.replace(/\\/g, "/"), dest: "libcurl" },
+                    { src: `${bareModulePath}/**/*`.replace(/\\/g, "/"), dest: "baremod" }
                 ]
             })
         ]
@@ -80,6 +55,6 @@ export default defineConfig({
     ],
     output: "server",
     adapter: node({
-        mode: "middleware"
+        mode: "standalone"
     })
 });
