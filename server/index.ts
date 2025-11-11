@@ -23,7 +23,11 @@ const serverFactory: FastifyServerFactory = (
 ): RawServerDefault => {
     return createServer()
         .on("request", (req, res) => {
-            if (bareServer.shouldRoute(req)) {
+            // Handle bare server requests, including redirecting /bare to /bare/
+            if (req.url === "/bare") {
+                res.writeHead(301, { Location: "/bare/" });
+                res.end();
+            } else if (bareServer.shouldRoute(req)) {
                 bareServer.routeRequest(req, res);
             } else {
                 handler(req, res);
