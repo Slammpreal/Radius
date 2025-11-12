@@ -18,33 +18,14 @@ import { handler as astroHandler } from "../dist/server/entry.mjs";
 import { createServer } from "node:http";
 import { Socket } from "node:net";
 
-// Configure HTTP agents with proper keep-alive limits
-const httpAgent = new http.Agent({
-    keepAlive: true,
-    keepAliveMsecs: 1000,
-    maxSockets: 25,
-    maxFreeSockets: 5,
-    timeout: 30000,
-    maxTotalSockets: 50
-});
-
-const httpsAgent = new https.Agent({
-    keepAlive: true,
-    keepAliveMsecs: 1000,
-    maxSockets: 25,
-    maxFreeSockets: 5,
-    timeout: 30000,
-    maxTotalSockets: 50
-});
-
+// Disable keep-alive completely to fix "too many keepalive requests" error
 const bareServer = createBareServer("/bare/", {
-    connectionLimiter: {
-        maxConnectionsPerIP: 50,
-        windowDuration: 60,
-        blockDuration: 30,
-    },
-    httpAgent: httpAgent,
-    httpsAgent: httpsAgent,
+    httpAgent: new http.Agent({
+        keepAlive: false
+    }),
+    httpsAgent: new https.Agent({
+        keepAlive: false
+    })
 });
 
 const serverFactory: FastifyServerFactory = (
@@ -52,6 +33,9 @@ const serverFactory: FastifyServerFactory = (
 ): RawServerDefault => {
     const server = createServer()
         .on("request", (req, res) => {
+            // Force Connection: close header
+            res.setHeader('Connection', 'close');
+            
             if (bareServer.shouldRoute(req)) {
                 bareServer.routeRequest(req, res);
             } else {
@@ -67,12 +51,9 @@ const serverFactory: FastifyServerFactory = (
             }
         });
     
-    // Configure server keep-alive settings
-    server.keepAliveTimeout = 3000;
-    server.headersTimeout = 4000;
-    server.requestTimeout = 30000;
-    // @ts-ignore - maxRequestsPerSocket exists but may not be in types
-    server.maxRequestsPerSocket = 100;
+    // Disable keep-alive on the server completely
+    server.keepAliveTimeout = 0;
+    server.headersTimeout = 1000;
     
     return server;
 };
