@@ -11,33 +11,25 @@ import { Socket } from 'node:net';
 import http from 'node:http';
 import https from 'node:https';
 
-// Configure HTTP agents with proper keep-alive limits
+// Create agents that completely disable connection pooling
 const httpAgent = new http.Agent({
-    keepAlive: true,
-    keepAliveMsecs: 1000,
-    maxSockets: 25,
-    maxFreeSockets: 5,
-    timeout: 30000,
-    maxTotalSockets: 50
+    keepAlive: false,
+    maxSockets: Infinity,
+    maxFreeSockets: 0
 });
 
 const httpsAgent = new https.Agent({
-    keepAlive: true,
-    keepAliveMsecs: 1000,
-    maxSockets: 25,
-    maxFreeSockets: 5,
-    timeout: 30000,
-    maxTotalSockets: 50
+    keepAlive: false,
+    maxSockets: Infinity,
+    maxFreeSockets: 0
 });
 
+// Remove connection limiter entirely
 const bareServer = createBareServer('/bare/', {
-    connectionLimiter: {
-        maxConnectionsPerIP: 50,
-        windowDuration: 60,
-        blockDuration: 30,
-    },
     httpAgent: httpAgent,
     httpsAgent: httpsAgent,
+    // @ts-ignore
+    connectionLimiter: undefined
 });
 
 let app: any = null;
@@ -48,6 +40,10 @@ async function getApp() {
   const serverFactory = (handler: any) => {
     const server = createServer()
       .on('request', (req, res) => {
+        // Force close connections
+        res.shouldKeepAlive = false;
+        res.setHeader('Connection', 'close');
+        
         if (bareServer.shouldRoute(req)) {
           bareServer.routeRequest(req, res);
         } else {
@@ -60,14 +56,16 @@ async function getApp() {
         } else if (req.url?.endsWith('/wisp/') || req.url?.endsWith('/adblock/')) {
           wisp.routeRequest(req, socket as Socket, head);
         }
+      })
+      .on('connection', (socket) => {
+        socket.setKeepAlive(false);
+        socket.setTimeout(30000);
       });
     
-    // Configure server keep-alive settings
-    server.keepAliveTimeout = 3000;
-    server.headersTimeout = 4000;
-    server.requestTimeout = 30000;
-    // @ts-ignore - maxRequestsPerSocket exists but may not be in types
-    server.maxRequestsPerSocket = 100;
+    server.keepAliveTimeout = 0;
+    server.headersTimeout = 1000;
+    server.requestTimeout = 0;
+    server.timeout = 0;
     
     return server;
   };
@@ -77,6 +75,8 @@ async function getApp() {
     ignoreDuplicateSlashes: true,
     ignoreTrailingSlash: true,
     serverFactory: serverFactory,
+    connectionTimeout: 0,
+    keepAliveTimeout: 0
   });
 
   await app.register(fastifyStatic, {
@@ -96,7 +96,6 @@ async function getApp() {
 export const handler: Handler = async (event, context) => {
   const app = await getApp();
   
-  // Handle the request through Fastify
   return new Promise((resolve, reject) => {
     const req = {
       method: event.httpMethod,
