@@ -8,29 +8,40 @@ import { createBareServer } from '@tomphttp/bare-server-node';
 import { handler as astroHandler } from '../../dist/server/entry.mjs';
 import { createServer } from 'node:http';
 import { Socket } from 'node:net';
-import http from 'node:http';
-import https from 'node:https';
 
-// Create agents that completely disable connection pooling
-const httpAgent = new http.Agent({
-    keepAlive: false,
-    maxSockets: Infinity,
-    maxFreeSockets: 0
-});
+const bareServer = createBareServer('/bare/');
 
-const httpsAgent = new https.Agent({
-    keepAlive: false,
-    maxSockets: Infinity,
-    maxFreeSockets: 0
-});
+// Simple semaphore implementation (same logic as server/index.ts)
+class Semaphore {
+  private max: number;
+  private current = 0;
+  private queue: Array<() => void> = [];
 
-// Remove connection limiter entirely
-const bareServer = createBareServer('/bare/', {
-    httpAgent: httpAgent,
-    httpsAgent: httpsAgent,
-    // @ts-ignore
-    connectionLimiter: undefined
-});
+  constructor(max: number) {
+    this.max = Math.max(1, max);
+  }
+
+  async acquire(): Promise<void> {
+    if (this.current < this.max) {
+      this.current++;
+      return;
+    }
+    await new Promise<void>((resolve) => this.queue.push(resolve));
+  }
+
+  release(): void {
+    if (this.queue.length > 0) {
+      const next = this.queue.shift()!;
+      this.current++;
+      next();
+      return;
+    }
+    if (this.current > 0) this.current--;
+  }
+}
+
+const SCRAMJET_CONCURRENCY = parseInt(process.env.SCRAMJET_CONCURRENCY || "6", 10);
+const scramjetSemaphore = new Semaphore(SCRAMJET_CONCURRENCY);
 
 let app: any = null;
 
@@ -38,17 +49,47 @@ async function getApp() {
   if (app) return app;
 
   const serverFactory = (handler: any) => {
-    const server = createServer()
+    return createServer()
       .on('request', (req, res) => {
-        // Force close connections
-        res.shouldKeepAlive = false;
-        res.setHeader('Connection', 'close');
-        
-        if (bareServer.shouldRoute(req)) {
-          bareServer.routeRequest(req, res);
-        } else {
-          handler(req, res);
+        const url = req.url || "";
+        const isScramjet = url.startsWith("/~/scramjet/");
+
+        if (!isScramjet) {
+          if (bareServer.shouldRoute(req)) {
+            bareServer.routeRequest(req, res);
+          } else {
+            handler(req, res);
+          }
+          return;
         }
+
+        // throttle scramjet requests
+        scramjetSemaphore.acquire().then(() => {
+          const onDone = () => {
+            res.removeListener("finish", onDone);
+            res.removeListener("close", onDone);
+            scramjetSemaphore.release();
+          };
+
+          res.once("finish", onDone);
+          res.once("close", onDone);
+
+          try {
+            if (bareServer.shouldRoute(req)) {
+              bareServer.routeRequest(req, res);
+            } else {
+              handler(req, res);
+            }
+          } catch (err) {
+            onDone();
+            throw err;
+          }
+        }).catch(() => {
+          try {
+            res.statusCode = 503;
+            res.end("Service temporarily unavailable");
+          } catch (_) {}
+        });
       })
       .on('upgrade', (req, socket, head) => {
         if (bareServer.shouldRoute(req)) {
@@ -56,18 +97,7 @@ async function getApp() {
         } else if (req.url?.endsWith('/wisp/') || req.url?.endsWith('/adblock/')) {
           wisp.routeRequest(req, socket as Socket, head);
         }
-      })
-      .on('connection', (socket) => {
-        socket.setKeepAlive(false);
-        socket.setTimeout(30000);
       });
-    
-    server.keepAliveTimeout = 0;
-    server.headersTimeout = 1000;
-    server.requestTimeout = 0;
-    server.timeout = 0;
-    
-    return server;
   };
 
   app = Fastify({
@@ -75,8 +105,6 @@ async function getApp() {
     ignoreDuplicateSlashes: true,
     ignoreTrailingSlash: true,
     serverFactory: serverFactory,
-    connectionTimeout: 0,
-    keepAliveTimeout: 0
   });
 
   await app.register(fastifyStatic, {
@@ -96,6 +124,7 @@ async function getApp() {
 export const handler: Handler = async (event, context) => {
   const app = await getApp();
   
+  // Handle the request through Fastify
   return new Promise((resolve, reject) => {
     const req = {
       method: event.httpMethod,
