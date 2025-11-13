@@ -67,10 +67,6 @@ Choose your preferred platform:
 
 Heroku fully supports WebSocket connections and is recommended for production deployments.
 
-1. Click the "Deploy to Heroku" button above
-2. Fill in the required information
-3. Click "Deploy app"
-
 **Manual deployment:**
 ```bash
 heroku create your-app-name
@@ -80,17 +76,8 @@ git push heroku main
 ## Deploy to Replit
 [![Run on Replit](https://replit.com/badge/github/RadiusProxy/Radius)](https://replit.com/new/github/RadiusProxy/Radius)
 
-1. Click the "Run on Replit" button above
-2. The `.replit` and `replit.nix` configurations will automatically set up the environment
-3. Click "Run" to start the server
-4. Your app will be available at the Replit URL
-
 ## Deploy to CodeSandbox
 [![Edit in CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/github/RadiusProxy/Radius)
-
-1. Click the "Edit in CodeSandbox" button above
-2. The `.codesandbox/tasks.json` configuration will automatically set up the tasks
-3. Run the "Start Production Server" task to launch the app
 
 ## Deploy with Docker
 
@@ -183,6 +170,7 @@ Don't Wory. add this html script into any basic Website builder
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev <br>
 [All of the contributors!](https://github.com/RadiusProxy/Radius/graphs/contributors)
+
 
 
 
