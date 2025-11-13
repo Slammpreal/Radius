@@ -25,12 +25,13 @@ If you can't donate, tell your friends about Radius!
 [TailwindCSS](https://tailwindcss.com) - CSS framework <br>
 [Ultraviolet](https://github.com/titaniumnetwork-dev/Ultraviolet) - Web proxy <br>
 [Scramjet](https://github.com/MercuryWorkshop/Scramjet) - Web proxy <br>
-[@mercuryworkshop/wisp-js](https://github.com/MercuryWorkshop/wisp-js) - Wisp server and client in JavaScript <br>
-[bare-mux](https://github.com/MercuryWorkshop/bare-mux) - Modular implementation of the Bare client interface <br>
+[Wisp-js](https://github.com/MercuryWorkshop/wisp-js) - Wisp server and client in JavaScript <br>
+[Bare-mux](https://github.com/MercuryWorkshop/bare-mux) - Modular implementation of the Bare client interface <br>
 [EpoxyTransport](https://github.com/MercuryWorkshop/EpoxyTransport) Bare-mux transport using epoxy-tls <br>
 [CurlTransport](https://github.com/MercuryWorkshop/CurlTransport) Bare-mux transport using libcurl.js <br>
 
 # Setup
+Setting Up Raduius is simple and convinent, for (`pnpm`), run
 ```bash
 git clone https://github.com/RadiusProxy/Radius
 cd Radius
@@ -40,11 +41,11 @@ pnpm bstart
 Radius will run on port 8080 by default, or 4321 for a dev environment (`pnpm dev`).
 
 > [!CAUTION]
-> The Bare Server WILL NOT WORK using (`npm run dev`) which will lead to lack of functionality
+> The Bare Server WILL NOT WORK using (`npm run dev`) which will lead to lack of functionality, however the wisp server and basic proxy system will still be functional
 
-Build using (`npm`)
+And for (`npm`), run
 ```bash
-# Bare Server WILL NOT WORK due to npm dev
+# Bare Server WILL NOT WORK due to npm run dev
 git clone https://github.com/RadiusProxy/Radius
 cd Radius
 npm install
@@ -60,24 +61,6 @@ Radius can be easily deployed to various platforms with full backend functionali
 ## Quick Deploy
 
 Choose your preferred platform:
-
-## Deploy to Vercel
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/RadiusProxy/Radius)
-
-**Note:** Vercel has limitations with WebSocket connections. The proxy functionality may be limited.
-
-1. Click the "Deploy with Vercel" button above
-2. Follow the Vercel deployment wizard
-3. The `vercel.json` configuration will automatically set up the build
-
-## Deploy to Netlify
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/RadiusProxy/Radius)
-
-**Note:** Netlify Functions have limitations with WebSocket connections. Full proxy functionality may be limited.
-
-1. Click the "Deploy to Netlify" button above
-2. Follow the Netlify deployment wizard
-3. The `netlify.toml` configuration will automatically set up the build
 
 ## Deploy to Heroku
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/RadiusProxy/Radius)
@@ -108,24 +91,6 @@ git push heroku main
 1. Click the "Edit in CodeSandbox" button above
 2. The `.codesandbox/tasks.json` configuration will automatically set up the tasks
 3. Run the "Start Production Server" task to launch the app
-
-## Deploy to Render
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
-
-Render fully supports WebSocket connections and is recommended for production deployments.
-
-1. Click the "Deploy to Render" button above or go to [Render Dashboard](https://dashboard.render.com)
-2. Connect your GitHub repository
-3. The `render.yaml` configuration will automatically set up the service
-
-## Deploy to Railway
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/RadiusProxy/Radius)
-
-Railway fully supports WebSocket connections and is an excellent choice for deployments.
-
-1. Click the "Deploy on Railway" button above
-2. Connect your GitHub account
-3. The `railway.json` configuration will automatically set up the build
 
 ## Deploy with Docker
 
@@ -218,5 +183,6 @@ Don't Wory. add this html script into any basic Website builder
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev <br>
 [All of the contributors!](https://github.com/RadiusProxy/Radius/graphs/contributors)
+
 
 
