@@ -39,6 +39,18 @@ pnpm bstart
 ```
 Radius will run on port 8080 by default, or 4321 for a dev environment (`pnpm dev`).
 
+> [!CAUTION]
+> The Bare Server WILL NOT WORK using (`npm run dev`) which will lead to lack of functionality
+
+Build using (`npm`)
+```bash
+# Bare Server WILL NOT WORK due to npm dev
+git clone https://github.com/RadiusProxy/Radius
+cd Radius
+npm install
+npm run dev
+```
+
 # Deployment
 
 Radius can be easily deployed to various platforms with full backend functionality. 
@@ -206,4 +218,5 @@ Don't Wory. add this html script into any basic Website builder
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev <br>
 [All of the contributors!](https://github.com/RadiusProxy/Radius/graphs/contributors)
+
 
