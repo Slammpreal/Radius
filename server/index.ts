@@ -18,9 +18,9 @@ import { Socket } from "node:net";
 
 const bareServer = createBareServer("/bare/", {
     connectionLimiter: {
-        maxConnectionsPerIP: 100,
-        windowDuration: 60,
-        blockDuration: 30
+        maxConnectionsPerIP: parseInt(process.env.BARE_MAX_CONNECTIONS_PER_IP as string) || 100,
+        windowDuration: parseInt(process.env.BARE_WINDOW_DURATION as string) || 60,
+        blockDuration: parseInt(process.env.BARE_BLOCK_DURATION as string) || 30
     }
 });
 
