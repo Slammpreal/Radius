@@ -31,6 +31,9 @@ If you can't donate, tell your friends about Radius!
 [CurlTransport](https://github.com/MercuryWorkshop/CurlTransport) Bare-mux transport using libcurl.js <br>
 
 # Setup
+> [!TIP]
+> Deploy localy on localy host to have a adress only you can acess, all functionaly will remain the same and the site will work properley! To do this, set up with (`pnpm`) using the staps below and visit http://localhost:8080 for a full conpleate site localy!
+
 Setting Up Raduius is simple and convinent, for (`pnpm`), run
 ```bash
 git clone https://github.com/RadiusProxy/Radius
@@ -170,6 +173,7 @@ Don't Wory. add this html script into any basic Website builder
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev <br>
 [All of the contributors!](https://github.com/RadiusProxy/Radius/graphs/contributors)
+
 
 
 
