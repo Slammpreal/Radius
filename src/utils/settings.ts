@@ -151,28 +151,34 @@ class Settings {
     #enableAutomaticSwitching() {
         // List of hard-to-load sites that need optimized configs
         const hardToLoadSites = [
-            'youtube.com', 'discord.com', 'twitch.tv', 
-            'reddit.com', 'twitter.com', 'x.com'
+            "youtube.com",
+            "discord.com",
+            "twitch.tv",
+            "reddit.com",
+            "twitter.com",
+            "x.com"
         ];
 
         // Monitor navigation events
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
             const checkAndSwitch = () => {
                 try {
                     const currentUrl = window.location.href;
-                    const isHardSite = hardToLoadSites.some(site => currentUrl.includes(site));
-                    
+                    const isHardSite = hardToLoadSites.some((site) => currentUrl.includes(site));
+
                     if (isHardSite) {
                         // Switch to optimized config (Scramjet + Bare for better compatibility)
                         const currentProxy = this.#storageManager.getVal("proxy");
                         const currentRouting = this.#storageManager.getVal("routingMode");
-                        
+
                         if (currentProxy !== "sj" || currentRouting !== "bare") {
-                            console.log("[Automatic Switching] Switching to optimized config for hard-to-load site");
+                            console.log(
+                                "[Automatic Switching] Switching to optimized config for hard-to-load site"
+                            );
                             this.#storageManager.setVal("autoSwitchActive", "true");
                             this.#storageManager.setVal("autoSwitchPrevProxy", currentProxy);
                             this.#storageManager.setVal("autoSwitchPrevRouting", currentRouting);
-                            
+
                             // Switch to Scramjet + Bare
                             this.proxy("sj");
                             const sw = SW.getInstance().next().value;
@@ -185,7 +191,7 @@ class Settings {
                         console.log("[Automatic Switching] Restoring previous config");
                         const prevProxy = this.#storageManager.getVal("autoSwitchPrevProxy");
                         const prevRouting = this.#storageManager.getVal("autoSwitchPrevRouting");
-                        
+
                         if (prevProxy) this.proxy(prevProxy as "uv" | "sj");
                         if (prevRouting) {
                             const sw = SW.getInstance().next().value;
@@ -193,7 +199,7 @@ class Settings {
                                 sw.routingMode(prevRouting as "wisp" | "bare", true);
                             }
                         }
-                        
+
                         this.#storageManager.removeVal("autoSwitchActive");
                     }
                 } catch (err) {
@@ -203,22 +209,22 @@ class Settings {
 
             // Initial check
             checkAndSwitch();
-            
+
             // Store the handler for cleanup
             (window as any).__automaticSwitchingHandler = checkAndSwitch;
         }
     }
 
     #disableAutomaticSwitching() {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
             // Clean up
             delete (window as any).__automaticSwitchingHandler;
-            
+
             // Restore config if currently switched
             if (this.#storageManager.getVal("autoSwitchActive") === "true") {
                 const prevProxy = this.#storageManager.getVal("autoSwitchPrevProxy");
                 const prevRouting = this.#storageManager.getVal("autoSwitchPrevRouting");
-                
+
                 if (prevProxy) this.proxy(prevProxy as "uv" | "sj");
                 if (prevRouting) {
                     const sw = SW.getInstance().next().value;
@@ -226,7 +232,7 @@ class Settings {
                         sw.routingMode(prevRouting as "wisp" | "bare", true);
                     }
                 }
-                
+
                 this.#storageManager.removeVal("autoSwitchActive");
                 this.#storageManager.removeVal("autoSwitchPrevProxy");
                 this.#storageManager.removeVal("autoSwitchPrevRouting");
@@ -235,7 +241,7 @@ class Settings {
     }
 
     #enableLoadAssist() {
-        if (typeof window !== 'undefined' && typeof console !== 'undefined') {
+        if (typeof window !== "undefined" && typeof console !== "undefined") {
             let errorCount = 0;
             let lastErrorTime = 0;
             const ERROR_THRESHOLD = 3; // Number of errors before switching
@@ -244,39 +250,41 @@ class Settings {
             const originalError = console.error;
             const errorHandler = (...args: any[]) => {
                 originalError.apply(console, args);
-                
+
                 const now = Date.now();
-                const errorMessage = args.join(' ');
-                
+                const errorMessage = args.join(" ");
+
                 // Check if error is proxy-related
-                const isProxyError = 
-                    errorMessage.includes('bare') ||
-                    errorMessage.includes('wisp') ||
-                    errorMessage.includes('proxy') ||
-                    errorMessage.includes('Failed to fetch') ||
-                    errorMessage.includes('NetworkError') ||
-                    errorMessage.includes('ERR_');
+                const isProxyError =
+                    errorMessage.includes("bare") ||
+                    errorMessage.includes("wisp") ||
+                    errorMessage.includes("proxy") ||
+                    errorMessage.includes("Failed to fetch") ||
+                    errorMessage.includes("NetworkError") ||
+                    errorMessage.includes("ERR_");
 
                 if (isProxyError) {
                     // Reset counter if outside time window
                     if (now - lastErrorTime > ERROR_WINDOW) {
                         errorCount = 0;
                     }
-                    
+
                     errorCount++;
                     lastErrorTime = now;
-                    
-                    console.log(`[Load Assist] Proxy error detected (${errorCount}/${ERROR_THRESHOLD})`);
-                    
+
+                    console.log(
+                        `[Load Assist] Proxy error detected (${errorCount}/${ERROR_THRESHOLD})`
+                    );
+
                     if (errorCount >= ERROR_THRESHOLD) {
                         console.log("[Load Assist] Error threshold reached, switching config");
                         errorCount = 0; // Reset to prevent continuous switching
-                        
+
                         // Try different config
                         const currentProxy = this.#storageManager.getVal("proxy");
                         const currentRouting = this.#storageManager.getVal("routingMode");
                         const currentTransport = this.#storageManager.getVal("transport");
-                        
+
                         // Cycle through configurations
                         if (currentProxy === "uv" && currentRouting === "wisp") {
                             // Try Scramjet + Wisp
@@ -296,7 +304,8 @@ class Settings {
                             const sw = SW.getInstance().next().value;
                             if (sw) {
                                 sw.routingMode("wisp", true);
-                                const newTransport = currentTransport === "libcurl" ? "epoxy" : "libcurl";
+                                const newTransport =
+                                    currentTransport === "libcurl" ? "epoxy" : "libcurl";
                                 sw.setTransport(newTransport as "epoxy" | "libcurl");
                             }
                         } else {
@@ -320,7 +329,7 @@ class Settings {
     }
 
     #disableLoadAssist() {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
             // Restore original console.error
             if ((window as any).__loadAssistOriginalError) {
                 console.error = (window as any).__loadAssistOriginalError;
@@ -332,7 +341,7 @@ class Settings {
 
     async *#init() {
         yield this.theme(this.#storageManager.getVal("theme") || "default");
-        
+
         // Initialize experimental features if enabled
         if (this.#storageManager.getVal("automaticSwitching") === "true") {
             this.#enableAutomaticSwitching();
