@@ -1,5 +1,6 @@
 import { BareMuxConnection } from "@mercuryworkshop/bare-mux";
 import { StoreManager } from "./storage";
+import { applySiteOptimizations, requiresSpecialHandling } from "./siteOptimizations";
 
 const createScript = (src: string, defer?: boolean) => {
     const script = document.createElement("script") as HTMLScriptElement;
@@ -61,10 +62,44 @@ class SW {
         return template.replace("%s", encodeURIComponent(input));
     }
 
-    encodeURL(string: string): string {
+    async encodeURL(string: string): Promise<string> {
         const proxy = this.#storageManager.getVal("proxy") as "uv" | "sj";
+        const transport = this.#storageManager.getVal("transport") as "epoxy" | "libcurl";
+        const routingMode = this.#storageManager.getVal("routingMode") as "wisp" | "bare";
         const input = this.search(string, this.#storageManager.getVal("searchEngine"));
+
         try {
+            // Check if site requires special handling and apply optimizations
+            if (requiresSpecialHandling(input)) {
+                const optimizations = applySiteOptimizations(
+                    input,
+                    proxy,
+                    transport || "epoxy",
+                    routingMode || "wisp"
+                );
+
+                if (optimizations.optimized) {
+                    console.log("Applying site-specific optimizations for:", input);
+
+                    // Apply optimized settings
+                    if (optimizations.proxy !== proxy) {
+                        this.#storageManager.setVal("proxy", optimizations.proxy);
+                    }
+                    if (optimizations.transport !== transport) {
+                        await this.setTransport(optimizations.transport);
+                    }
+                    if (optimizations.routingMode !== routingMode) {
+                        await this.routingMode(optimizations.routingMode, true);
+                    }
+
+                    // Use optimized proxy
+                    return optimizations.proxy === "uv"
+                        ? `${__uv$config.prefix}${__uv$config.encodeUrl!(input)}`
+                        : this.#scramjetController!.encodeUrl(input);
+                }
+            }
+
+            // Use current proxy settings
             return proxy === "uv"
                 ? `${__uv$config.prefix}${__uv$config.encodeUrl!(input)}`
                 : this.#scramjetController!.encodeUrl(input);
