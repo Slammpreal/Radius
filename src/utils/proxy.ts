@@ -38,24 +38,41 @@ class SW {
     }
 
     search(input: string, template: string) {
+        // Enhanced URL detection for better compatibility
         try {
-            return new URL(input).toString();
+            // Try parsing as complete URL first
+            const parsedUrl = new URL(input);
+            return parsedUrl.toString();
         } catch (_) {}
 
         try {
+            // Try with http:// prefix
             const url = new URL(`http://${input}`);
             if (url.hostname.includes(".")) return url.toString();
         } catch (_) {}
 
+        try {
+            // Try with https:// prefix for secure sites
+            const url = new URL(`https://${input}`);
+            if (url.hostname.includes(".")) return url.toString();
+        } catch (_) {}
+
+        // Fallback to search engine
         return template.replace("%s", encodeURIComponent(input));
     }
 
     encodeURL(string: string): string {
         const proxy = this.#storageManager.getVal("proxy") as "uv" | "sj";
         const input = this.search(string, this.#storageManager.getVal("searchEngine"));
-        return proxy === "uv"
-            ? `${__uv$config.prefix}${__uv$config.encodeUrl!(input)}`
-            : this.#scramjetController!.encodeUrl(input);
+        try {
+            return proxy === "uv"
+                ? `${__uv$config.prefix}${__uv$config.encodeUrl!(input)}`
+                : this.#scramjetController!.encodeUrl(input);
+        } catch (error) {
+            console.error("URL encoding error:", error);
+            // Fallback to UV encoding if Scramjet fails
+            return `${__uv$config.prefix}${__uv$config.encodeUrl!(input)}`;
+        }
     }
 
     async setTransport(transport?: "epoxy" | "libcurl", get?: boolean) {
@@ -79,30 +96,49 @@ class SW {
             transport || this.#storageManager.getVal("transport") || "epoxy"
         );
 
-        if (routingMode === "bare") {
-            // Use bare server transport
-            await this.#baremuxConn!.setTransport("/baremod/index.mjs", [bareServer()]);
-        } else {
-            // Use wisp server transport (default)
-            switch (transport) {
-                case "epoxy": {
-                    await this.#baremuxConn!.setTransport("/epoxy/index.mjs", [
-                        { wisp: wispServer() }
-                    ]);
-                    break;
+        try {
+            if (routingMode === "bare") {
+                // Use bare server transport with better error handling
+                await this.#baremuxConn!.setTransport("/baremod/index.mjs", [bareServer()]);
+                console.log("Bare transport configured successfully");
+            } else {
+                // Use wisp server transport (default) with enhanced configuration
+                const currentTransport =
+                    transport || this.#storageManager.getVal("transport") || "epoxy";
+                switch (currentTransport) {
+                    case "epoxy": {
+                        await this.#baremuxConn!.setTransport("/epoxy/index.mjs", [
+                            { wisp: wispServer() }
+                        ]);
+                        console.log("Epoxy transport configured successfully");
+                        break;
+                    }
+                    case "libcurl": {
+                        await this.#baremuxConn!.setTransport("/libcurl/index.mjs", [
+                            { wisp: wispServer() }
+                        ]);
+                        console.log("LibCurl transport configured successfully");
+                        break;
+                    }
+                    default: {
+                        // Fallback to epoxy for maximum compatibility
+                        await this.#baremuxConn!.setTransport("/epoxy/index.mjs", [
+                            { wisp: wispServer() }
+                        ]);
+                        console.log("Default epoxy transport configured");
+                        break;
+                    }
                 }
-                case "libcurl": {
-                    await this.#baremuxConn!.setTransport("/libcurl/index.mjs", [
-                        { wisp: wispServer() }
-                    ]);
-                    break;
-                }
-                default: {
-                    await this.#baremuxConn!.setTransport("/epoxy/index.mjs", [
-                        { wisp: wispServer() }
-                    ]);
-                    break;
-                }
+            }
+        } catch (error) {
+            console.error("Transport configuration error:", error);
+            // Attempt fallback to epoxy transport
+            try {
+                await this.#baremuxConn!.setTransport("/epoxy/index.mjs", [{ wisp: wispServer() }]);
+                console.log("Fallback to epoxy transport succeeded");
+            } catch (fallbackError) {
+                console.error("Fallback transport configuration failed:", fallbackError);
+                throw fallbackError;
             }
         }
     }
@@ -146,37 +182,64 @@ class SW {
         createScript("/vu/uv.config.js", true);
         createScript("/marcs/scramjet.all.js", true);
 
-        checkScripts().then(async () => {
-            this.#baremuxConn = new BareMuxConnection("/erab/worker.js");
-            await this.setTransport();
+        checkScripts()
+            .then(async () => {
+                try {
+                    this.#baremuxConn = new BareMuxConnection("/erab/worker.js");
+                    await this.setTransport();
 
-            // Load the ScramjetController class from the factory function
-            const { ScramjetController } = $scramjetLoadController();
+                    // Load the ScramjetController class from the factory function
+                    const { ScramjetController } = $scramjetLoadController();
 
-            this.#scramjetController = new ScramjetController({
-                prefix: "/~/scramjet/",
-                files: {
-                    wasm: "/marcs/scramjet.wasm.wasm",
-                    all: "/marcs/scramjet.all.js",
-                    sync: "/marcs/scramjet.sync.js"
-                },
-                flags: {
-                    rewriterLogs: false
+                    this.#scramjetController = new ScramjetController({
+                        prefix: "/~/scramjet/",
+                        files: {
+                            wasm: "/marcs/scramjet.wasm.wasm",
+                            all: "/marcs/scramjet.all.js",
+                            sync: "/marcs/scramjet.sync.js"
+                        },
+                        flags: {
+                            rewriterLogs: false
+                        }
+                    });
+
+                    if ("serviceWorker" in navigator) {
+                        try {
+                            await this.#scramjetController.init();
+                            navigator.serviceWorker.ready.then(async (reg) => {
+                                console.log("SW ready to go!");
+                                this.#serviceWorker = reg;
+                            });
+
+                            // Register service worker with error handling
+                            const registration = await navigator.serviceWorker.register("/sw.js", {
+                                scope: "/",
+                                updateViaCache: "none" // Always check for updates
+                            });
+
+                            console.log("Service worker registered successfully");
+
+                            // Handle service worker updates
+                            registration.addEventListener("updatefound", () => {
+                                console.log("Service worker update found");
+                            });
+                        } catch (swError) {
+                            console.error("Service worker initialization error:", swError);
+                            throw swError;
+                        }
+                    } else {
+                        throw new Error(
+                            "Your browser is not supported! This website uses Service Workers heavily."
+                        );
+                    }
+                } catch (error) {
+                    console.error("Proxy initialization error:", error);
+                    throw error;
                 }
+            })
+            .catch((error) => {
+                console.error("Script loading error:", error);
             });
-            if ("serviceWorker" in navigator) {
-                await this.#scramjetController.init();
-                navigator.serviceWorker.ready.then(async (reg) => {
-                    console.log("SW ready to go!");
-                    this.#serviceWorker = reg;
-                });
-                navigator.serviceWorker.register("/sw.js", { scope: "/" });
-            } else {
-                throw new Error(
-                    "Your browser is not supported! This website uses Service Workers heavily."
-                );
-            }
-        });
     }
 }
 
