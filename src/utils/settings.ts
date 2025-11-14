@@ -130,6 +130,30 @@ class Settings {
         }
     }
 
+    /**
+     * Enable or disable automatic switching feature
+     * @param enabled Whether automatic switching should be enabled
+     */
+    autoSwitch(enabled?: boolean) {
+        if (enabled === true || enabled === false) {
+            this.#storageManager.setVal("autoSwitch", enabled.valueOf().toString());
+        } else {
+            this.#storageManager.setVal("autoSwitch", "false");
+        }
+    }
+
+    /**
+     * Enable or disable load assist feature
+     * @param enabled Whether load assist should be enabled
+     */
+    loadAssist(enabled?: boolean) {
+        if (enabled === true || enabled === false) {
+            this.#storageManager.setVal("loadAssist", enabled.valueOf().toString());
+        } else {
+            this.#storageManager.setVal("loadAssist", "false");
+        }
+    }
+
     async *#init() {
         yield this.theme(this.#storageManager.getVal("theme") || "default");
     }
