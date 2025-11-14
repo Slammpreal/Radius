@@ -1,6 +1,6 @@
 import { BareMuxConnection } from "@mercuryworkshop/bare-mux";
+import { type SiteConfig, getFallbackConfigs, getSiteConfig } from "./siteConfigs";
 import { StoreManager } from "./storage";
-import { getSiteConfig, getFallbackConfigs, type SiteConfig } from "./siteConfigs";
 
 const createScript = (src: string, defer?: boolean) => {
     const script = document.createElement("script") as HTMLScriptElement;

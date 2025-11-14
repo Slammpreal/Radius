@@ -1,3 +1,8 @@
+import { fileURLToPath } from "node:url";
+import fastifyMiddie from "@fastify/middie";
+import fastifyStatic from "@fastify/static";
+import { server as wisp } from "@mercuryworkshop/wisp-js/server";
+import { createBareServer } from "@tomphttp/bare-server-node";
 import Fastify, {
     FastifyReply,
     FastifyRequest,
@@ -5,16 +10,11 @@ import Fastify, {
     FastifyServerFactoryHandler,
     RawServerDefault
 } from "fastify";
-import fastifyMiddie from "@fastify/middie";
-import fastifyStatic from "@fastify/static";
-import { fileURLToPath } from "node:url";
-import { server as wisp } from "@mercuryworkshop/wisp-js/server";
-import { createBareServer } from "@tomphttp/bare-server-node";
 
-//@ts-ignore this is created at runtime. No types associated w/it
-import { handler as astroHandler } from "../dist/server/entry.mjs";
 import { createServer } from "node:http";
 import { Socket } from "node:net";
+//@ts-ignore this is created at runtime. No types associated w/it
+import { handler as astroHandler } from "../dist/server/entry.mjs";
 
 const bareServer = createBareServer("/bare/", {
     connectionLimiter: {
