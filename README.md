@@ -32,7 +32,7 @@ If you can't donate, tell your friends about Radius!
 
 # Setup
 > [!TIP]
-> Deploy localy on localy host to have a adress only you can acess, all functionaly will remain the same and the site will work properley! To do this, set up with (`pnpm`) using the staps below and visit http://localhost:8080 for a full conpleate site localy!
+> Deploy localy on localhost to have a adress only you can acess, all of the functionaly will remain the same and the site will work properley! To do this, set up with (`pnpm`) using the staps below and visit http://localhost:8080 for a full conpleate site localy!
 
 Setting Up Raduius is simple and convinent, for (`pnpm`), run
 ```bash
@@ -40,6 +40,8 @@ git clone https://github.com/RadiusProxy/Radius
 cd Radius
 pnpm i
 pnpm bstart
+# Run pnpm dev instead of pnpm bstart to test in a dev enviroment, The Bare server may have limited functionality
+#pnpm dev
 ```
 Radius will run on port 8080 by default, or 4321 for a dev environment (`pnpm dev`).
 
@@ -52,14 +54,16 @@ And for (`npm`), run
 git clone https://github.com/RadiusProxy/Radius
 cd Radius
 npm install
-npm run dev
+npm run start
+# Run npm run dev instead of npm run start to test in a dev enviroment, The Bare server may have limited functionality
+#npm run dev
 ```
 
 # Deployment
 
 Radius can be easily deployed to various platforms with full backend functionality. 
 
-**📖 For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md)**
+**For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md)**
 
 ## Quick Deploy
 
@@ -118,7 +122,7 @@ All platforms support the following environment variables:
 - `PORT` - The port number to run the server on (default: 8080)
 
 ### Bare Server Connection Limiter
-These variables control the rate limiting for the Bare server to prevent abuse while allowing normal browsing:
+These variables control the rate limiting for the Bare server to prevent abuse while allowing normal browsing (optional but recomended):
 - `BARE_MAX_CONNECTIONS_PER_IP` - Maximum number of concurrent keep-alive connections per IP address (default: 100)
 - `BARE_WINDOW_DURATION` - Time window in seconds for counting connections (default: 60)
 - `BARE_BLOCK_DURATION` - Duration in seconds to block an IP after exceeding the limit (default: 30)
@@ -128,7 +132,7 @@ These variables control the rate limiting for the Bare server to prevent abuse w
 - **Vercel, Netlify**: Limited WebSocket support; some proxy features may not work as expected. These platforms work best for static content and serverless functions but may have limitations with the proxy backend.
 
 ## Don't Want To Deploy But The Link Is Inexcessable?
-Don't Wory. add this html script into any basic Website builder
+Don't wory, add this html script into any basic Website builder, it uses QuickDeploy to instantley open in about:blank and will work with ANY WEBSITE BUILDER or STATIC GENERATER/DEPLOYMENT!
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -183,6 +187,7 @@ Don't Wory. add this html script into any basic Website builder
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev <br>
 [All of the contributors!](https://github.com/RadiusProxy/Radius/graphs/contributors)
+
 
 
 
