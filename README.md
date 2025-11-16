@@ -178,14 +178,15 @@ Add this html script into any basic Website builder, it uses QuickDeploy to inst
 Or vist the official repo (works on any website hosting service or builder, no backend needed!)
 [QuickDeploy](https://github.com/sriail/QuickDeploy/tree/main)
 
-If you can not deploy, visit a example deployment with Radius using QuickDeploy [Hear!](quick-deploy-beige.vercel.app)
+If you can not deploy, visit a example deployment with Radius using QuickDeploy [Hear!](https://quick-deploy-beige.vercel.app)
 
 # Credits
-[sriail](https://github.com/sriail) - Owner and current cev of this repo <br>
+[sriail](https://github.com/sriail) - Owner and current dev of this repo <br>
 [Owski](https://github.com/unretain) - Owner of the Origonal Radius Proxy <br>
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev of Radius <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev of Radius <br>
-[All of the contributors!](https://github.com/RadiusProxy/Radius/graphs/contributors)
+[All of the contributors!](https://github.com/sriail/Radius/graphs/contributors)
+
 
 
 
