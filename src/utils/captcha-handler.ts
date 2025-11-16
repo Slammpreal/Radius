@@ -47,7 +47,7 @@ export function initializeCaptchaHandlers() {
                             node.sandbox.add("allow-scripts");
                             node.sandbox.add("allow-forms");
                         }
-                        
+
                         // Ensure credentials are included for CAPTCHA cookies
                         if (node.getAttribute("credentialless") !== null) {
                             node.removeAttribute("credentialless");
@@ -76,10 +76,7 @@ export function initializeCaptchaHandlers() {
  */
 function enhanceCookieHandling() {
     // Store original cookie descriptor
-    const originalCookieDescriptor = Object.getOwnPropertyDescriptor(
-        Document.prototype,
-        "cookie"
-    );
+    const originalCookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, "cookie");
 
     if (originalCookieDescriptor) {
         Object.defineProperty(document, "cookie", {
@@ -109,12 +106,15 @@ function enhanceNetworkRequests() {
 
     // Override fetch to ensure proper headers for CAPTCHA requests
     window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
-        const url = typeof input === "string" ? input : input instanceof Request ? input.url : input.toString();
+        const url =
+            typeof input === "string"
+                ? input
+                : input instanceof Request
+                  ? input.url
+                  : input.toString();
 
         // Check if this is a CAPTCHA-related request
-        const isCaptchaRequest = CAPTCHA_DOMAINS.some((domain) =>
-            url.includes(domain)
-        );
+        const isCaptchaRequest = CAPTCHA_DOMAINS.some((domain) => url.includes(domain));
 
         if (isCaptchaRequest) {
             // Ensure credentials are included
@@ -144,9 +144,7 @@ function enhanceNetworkRequests() {
         const originalOpen = xhr.open;
         xhr.open = function (method: string, url: string | URL, ...args: any[]) {
             const urlStr = url.toString();
-            const isCaptchaRequest = CAPTCHA_DOMAINS.some((domain) =>
-                urlStr.includes(domain)
-            );
+            const isCaptchaRequest = CAPTCHA_DOMAINS.some((domain) => urlStr.includes(domain));
 
             if (isCaptchaRequest) {
                 // Ensure credentials are included for CAPTCHA requests
