@@ -1,5 +1,6 @@
 import { BareMuxConnection } from "@mercuryworkshop/bare-mux";
 import { StoreManager } from "./storage";
+import { initializeCaptchaHandlers } from "./captcha-handler";
 
 const createScript = (src: string, defer?: boolean) => {
     const script = document.createElement("script") as HTMLScriptElement;
@@ -161,7 +162,15 @@ class SW {
                     sync: "/marcs/scramjet.sync.js"
                 },
                 flags: {
-                    rewriterLogs: false
+                    rewriterLogs: false,
+                    // Enhanced flags for optimal CAPTCHA and Cloudflare verification support
+                    serviceworkers: true, // Enable service worker support for CAPTCHA iframes
+                    captureErrors: true, // Capture errors for better debugging
+                    cleanErrors: false, // Keep error messages for CAPTCHA debugging
+                    strictRewrites: false, // Allow flexible rewrites for CAPTCHA domains
+                    syncxhr: true, // Enable synchronous XHR for CAPTCHA callbacks
+                    scramitize: true, // Enable advanced domain handling
+                    allowFailedIntercepts: true // Continue on failed intercepts for CAPTCHA fallbacks
                 }
             });
             if ("serviceWorker" in navigator) {
@@ -169,6 +178,9 @@ class SW {
                 navigator.serviceWorker.ready.then(async (reg) => {
                     console.log("SW ready to go!");
                     this.#serviceWorker = reg;
+
+                    // Initialize CAPTCHA handlers for automatic verification support
+                    initializeCaptchaHandlers();
                 });
                 navigator.serviceWorker.register("/sw.js", { scope: "/" });
             } else {
