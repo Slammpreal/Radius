@@ -41,6 +41,9 @@ const serverFactory: FastifyServerFactory = (
                 bareServer.routeUpgrade(req, socket as Socket, head);
             } else if (req.url?.includes("/wisp") || req.url?.includes("/adblock")) {
                 wisp.routeRequest(req, socket as Socket, head);
+            } else {
+                // Close unhandled upgrade requests to prevent hanging connections
+                socket.end();
             }
         });
 };
@@ -66,7 +69,20 @@ app.setNotFoundHandler((req, res) => {
 
 const port = parseInt(process.env.PORT as string) || parseInt("8080");
 
+// Add error handling for the server
 app.listen({ port: port, host: "0.0.0.0" }).then(async () => {
     console.log(`Server listening on http://localhost:${port}/`);
     console.log(`Server also listening on http://0.0.0.0:${port}/`);
+}).catch((err) => {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+});
+
+// Add error handling for uncaught errors
+process.on("uncaughtException", (err) => {
+    console.error("Uncaught exception:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("Unhandled rejection at:", promise, "reason:", reason);
 });
