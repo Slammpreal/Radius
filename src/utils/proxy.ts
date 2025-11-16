@@ -74,10 +74,10 @@ class SW {
                 (location.protocol === "https:" ? "https://" : "http://") + location.host + "/bare/"
             );
         };
-        
+
         // Get verification configuration
         const verificationConfig = this.getVerificationConfig();
-        
+
         if (get) return this.#storageManager.getVal("transport");
         this.#storageManager.setVal(
             "transport",
@@ -86,17 +86,21 @@ class SW {
 
         if (routingMode === "bare") {
             // Use bare server transport with verification
-            await this.#baremuxConn!.setTransport("/baremod/index.mjs", [bareServer()], [
-                { 
-                    headers: this.getVerificationHeaders(verificationConfig)
-                }
-            ]);
+            await this.#baremuxConn!.setTransport(
+                "/baremod/index.mjs",
+                [bareServer()],
+                [
+                    {
+                        headers: this.getVerificationHeaders(verificationConfig)
+                    }
+                ]
+            );
         } else {
             // Use wisp server transport (default) with verification
             switch (transport) {
                 case "epoxy": {
                     await this.#baremuxConn!.setTransport("/epoxy/index.mjs", [
-                        { 
+                        {
                             wisp: wispServer(),
                             ...this.getVerificationHeaders(verificationConfig)
                         }
@@ -105,7 +109,7 @@ class SW {
                 }
                 case "libcurl": {
                     await this.#baremuxConn!.setTransport("/libcurl/index.mjs", [
-                        { 
+                        {
                             wisp: wispServer(),
                             ...this.getVerificationHeaders(verificationConfig)
                         }
@@ -114,7 +118,7 @@ class SW {
                 }
                 default: {
                     await this.#baremuxConn!.setTransport("/epoxy/index.mjs", [
-                        { 
+                        {
                             wisp: wispServer(),
                             ...this.getVerificationHeaders(verificationConfig)
                         }
@@ -148,7 +152,7 @@ class SW {
         const type = this.#storageManager.getVal("verificationType") || "none";
         const siteKey = this.#storageManager.getVal("verificationSiteKey");
         const token = this.#storageManager.getVal("verificationToken");
-        
+
         return {
             type: type as "none" | "recaptcha" | "cloudflare",
             siteKey,
@@ -168,7 +172,7 @@ class SW {
 
     getVerificationHeaders(config: VerificationConfig): Record<string, string> {
         const headers: Record<string, string> = {};
-        
+
         if (config.type === "recaptcha" && config.token) {
             headers["X-Recaptcha-Token"] = config.token;
             if (config.siteKey) {
@@ -180,13 +184,13 @@ class SW {
                 headers["X-Turnstile-Site-Key"] = config.siteKey;
             }
         }
-        
+
         return headers;
     }
 
     async refreshVerificationToken(): Promise<string | null> {
         const config = this.getVerificationConfig();
-        
+
         if (config.type === "none" || !config.siteKey) {
             return null;
         }
@@ -196,7 +200,8 @@ class SW {
                 // ReCAPTCHA v3 implementation
                 if (typeof grecaptcha !== "undefined" && grecaptcha.ready) {
                     grecaptcha.ready(() => {
-                        grecaptcha.execute(config.siteKey!, { action: "proxy_request" })
+                        grecaptcha
+                            .execute(config.siteKey!, { action: "proxy_request" })
                             .then((token: string) => {
                                 this.#storageManager.setVal("verificationToken", token);
                                 resolve(token);

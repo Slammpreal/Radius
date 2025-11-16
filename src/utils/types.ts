@@ -29,4 +29,10 @@ const SearchEngines: Record<string, string> = {
     Yandex: "https://yandex.com/search/?text=%s"
 };
 
-export { type SettingsProps, type DropdownOptions, type VerificationType, type VerificationConfig, SearchEngines };
+export {
+    type SettingsProps,
+    type DropdownOptions,
+    type VerificationType,
+    type VerificationConfig,
+    SearchEngines
+};
