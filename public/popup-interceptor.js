@@ -1,7 +1,10 @@
 /**
  * Popup Interceptor Script
  * This script is injected into proxied pages to intercept window.open calls
- * and redirect them to the parent iframe instead of opening new tabs/windows
+ * and redirect them to the parent iframe instead of opening new tabs/windows.
+ * 
+ * The script only runs in iframe contexts and intercepts popups that would
+ * normally open in new tabs/windows (target="_blank", "_new", or empty).
  */
 
 (function() {
