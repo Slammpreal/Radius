@@ -30,12 +30,20 @@ class SW {
     #scramjetController?: ScramjetController;
     #serviceWorker?: ServiceWorkerRegistration;
     #storageManager: StoreManager<"radius||settings">;
+    #ready: Promise<void>;
     static #instance = new Set();
 
     static *getInstance() {
         for (const val of SW.#instance.keys()) {
             yield val as SW;
         }
+    }
+
+    /**
+     * Returns a promise that resolves when the SW instance is ready to use
+     */
+    ready(): Promise<void> {
+        return this.#ready;
     }
 
     search(input: string, template: string) {
@@ -147,7 +155,7 @@ class SW {
         createScript("/vu/uv.config.js", true);
         createScript("/marcs/scramjet.all.js", true);
 
-        checkScripts().then(async () => {
+        this.#ready = checkScripts().then(async () => {
             this.#baremuxConn = new BareMuxConnection("/erab/worker.js");
             await this.setTransport();
 

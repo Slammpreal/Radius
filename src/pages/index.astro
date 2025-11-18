@@ -58,9 +58,13 @@ const link = Astro.url.searchParams.get("redir");
             shortcut: document.getElementById("shortcut") as HTMLElement
         }
         const client = new BareClient();
+        
+        // Get SW instance and wait for it to be ready
+        const sw = SW.getInstance().next().value!;
+        await sw.ready();
+        
         input.addEventListener("keypress", async (event: any) => {
             if (event.key === "Enter") {
-                const sw = SW.getInstance().next().value!;
                 const settings = await Settings.getInstance();
                 iframe.classList.remove("hidden");
                 iframe.src = sw.encodeURL(input.value); 
