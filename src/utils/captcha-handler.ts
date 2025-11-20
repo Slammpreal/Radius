@@ -87,6 +87,24 @@ export function initializeCaptchaHandlers() {
 function fixMessagePortCloning() {
     const originalPostMessage = window.postMessage.bind(window);
 
+    // Helper to check if an object is a MessagePort
+    const isMessagePort = (obj: any): boolean => {
+        if (!obj) return false;
+        // Try instanceof first (most reliable)
+        if (obj instanceof MessagePort) return true;
+        // Fallback: check for MessagePort-like interface
+        if (
+            typeof obj === "object" &&
+            typeof obj.postMessage === "function" &&
+            typeof obj.start === "function" &&
+            typeof obj.close === "function"
+        ) {
+            // Additional check for constructor name as a hint (not definitive)
+            return obj.constructor?.name === "MessagePort" || obj.toString() === "[object MessagePort]";
+        }
+        return false;
+    };
+
     // Override postMessage to properly handle MessagePort transfers
     (window as any).postMessage = function (message: any, ...args: any[]) {
         try {
@@ -103,10 +121,7 @@ function fixMessagePortCloning() {
 
             // If transfer array contains MessagePort objects, ensure they are properly transferred
             if (transfer && Array.isArray(transfer)) {
-                const hasMessagePort = transfer.some(
-                    (item: any) =>
-                        item instanceof MessagePort || item?.constructor?.name === "MessagePort"
-                );
+                const hasMessagePort = transfer.some((item: any) => isMessagePort(item));
 
                 if (hasMessagePort) {
                     // Use the transfer parameter explicitly
@@ -117,13 +132,16 @@ function fixMessagePortCloning() {
             // For other cases, check if message contains MessagePort and auto-detect transfer
             if (message && typeof message === "object") {
                 const ports: MessagePort[] = [];
-                const collectPorts = (obj: any) => {
-                    if (obj instanceof MessagePort || obj?.constructor?.name === "MessagePort") {
+                const collectPorts = (obj: any, depth: number = 0) => {
+                    // Limit recursion depth to prevent infinite loops
+                    if (depth > 10) return;
+                    
+                    if (isMessagePort(obj)) {
                         ports.push(obj);
                     } else if (obj && typeof obj === "object") {
                         for (const key in obj) {
                             if (Object.prototype.hasOwnProperty.call(obj, key)) {
-                                collectPorts(obj[key]);
+                                collectPorts(obj[key], depth + 1);
                             }
                         }
                     }
@@ -276,7 +294,7 @@ function enhanceNetworkRequests() {
         xhr.open = function (
             method: string,
             url: string | URL,
-            async: boolean = true,
+            async?: boolean,
             username?: string | null,
             password?: string | null
         ) {
@@ -288,12 +306,16 @@ function enhanceNetworkRequests() {
                 xhr.withCredentials = true;
             }
 
+            // Call with appropriate number of arguments based on what was provided
             if (username !== undefined && password !== undefined) {
-                return originalOpen.call(this, method, url, async, username, password);
+                return originalOpen.call(this, method, url, async ?? true, username, password);
             } else if (username !== undefined) {
-                return originalOpen.call(this, method, url, async, username);
-            } else {
+                return originalOpen.call(this, method, url, async ?? true, username);
+            } else if (async !== undefined) {
                 return originalOpen.call(this, method, url, async);
+            } else {
+                // Use the 2-argument overload
+                return (originalOpen as any).call(this, method, url);
             }
         };
 
