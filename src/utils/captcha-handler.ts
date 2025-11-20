@@ -1,7 +1,8 @@
 /**
  * Enhanced CAPTCHA and Cloudflare verification handler
  * This module ensures that reCAPTCHA, hCaptcha, and Cloudflare Turnstile
- * work seamlessly within the proxy environment
+ * work seamlessly within the proxy environment with support for heavy cookies
+ * and complex browser services
  */
 
 /**
@@ -17,8 +18,28 @@ const CAPTCHA_DOMAINS = [
 ];
 
 /**
+ * List of domains known to use heavy cookies and complex browser services
+ */
+const HEAVY_COOKIE_DOMAINS = [
+    "amazon.com",
+    "ebay.com",
+    "walmart.com",
+    "google.com",
+    "youtube.com",
+    "facebook.com",
+    "instagram.com",
+    "twitter.com",
+    "linkedin.com",
+    "microsoft.com",
+    "apple.com",
+    "netflix.com",
+    "spotify.com"
+];
+
+/**
  * Initialize CAPTCHA handlers on page load
- * This ensures that CAPTCHA widgets can properly communicate with their APIs
+ * This ensures that CAPTCHA widgets and heavy cookie sites can properly
+ * communicate with their APIs and maintain session state
  */
 export function initializeCaptchaHandlers() {
     if (typeof window === "undefined") return;
@@ -52,6 +73,9 @@ export function initializeCaptchaHandlers() {
                         if (node.getAttribute("credentialless") !== null) {
                             node.removeAttribute("credentialless");
                         }
+
+                        // Set appropriate attributes for better compatibility
+                        node.setAttribute("allow", "cross-origin-isolated");
                     }
                 }
             });
@@ -64,15 +88,18 @@ export function initializeCaptchaHandlers() {
         subtree: true
     });
 
-    // Ensure cookies are properly handled for CAPTCHA tokens
+    // Ensure cookies are properly handled for CAPTCHA tokens and heavy cookie sites
     enhanceCookieHandling();
 
-    // Enhance fetch and XMLHttpRequest for CAPTCHA requests
+    // Enhance fetch and XMLHttpRequest for CAPTCHA and heavy cookie requests
     enhanceNetworkRequests();
+
+    // Add storage persistence for better cookie support
+    enhanceStoragePersistence();
 }
 
 /**
- * Enhance cookie handling to ensure CAPTCHA tokens are properly stored
+ * Enhance cookie handling to ensure CAPTCHA tokens and heavy cookies are properly stored
  */
 function enhanceCookieHandling() {
     // Store original cookie descriptor
@@ -84,9 +111,20 @@ function enhanceCookieHandling() {
                 return originalCookieDescriptor.get?.call(this) || "";
             },
             set(value) {
-                // Ensure SameSite=None for CAPTCHA cookies in cross-origin iframes
-                if (typeof value === "string" && value.includes("_GRECAPTCHA")) {
-                    if (!value.includes("SameSite")) {
+                // Ensure SameSite=None for cookies in cross-origin contexts
+                if (typeof value === "string") {
+                    // Check if this is a CAPTCHA or heavy cookie site cookie
+                    const isCaptchaCookie =
+                        value.includes("_GRECAPTCHA") ||
+                        value.includes("h-captcha") ||
+                        value.includes("cf_");
+                    const isImportantCookie =
+                        isCaptchaCookie ||
+                        value.includes("session") ||
+                        value.includes("auth") ||
+                        value.includes("token");
+
+                    if (isImportantCookie && !value.includes("SameSite")) {
                         value += "; SameSite=None; Secure";
                     }
                 }
@@ -98,13 +136,13 @@ function enhanceCookieHandling() {
 }
 
 /**
- * Enhance network requests to properly handle CAPTCHA API calls
+ * Enhance network requests to properly handle CAPTCHA API calls and heavy cookie sites
  */
 function enhanceNetworkRequests() {
     // Store original fetch
     const originalFetch = window.fetch;
 
-    // Override fetch to ensure proper headers for CAPTCHA requests
+    // Override fetch to ensure proper headers for CAPTCHA and heavy cookie requests
     window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
         const url =
             typeof input === "string"
@@ -113,10 +151,11 @@ function enhanceNetworkRequests() {
                   ? input.url
                   : input.toString();
 
-        // Check if this is a CAPTCHA-related request
+        // Check if this is a CAPTCHA-related or heavy cookie site request
         const isCaptchaRequest = CAPTCHA_DOMAINS.some((domain) => url.includes(domain));
+        const isHeavyCookieRequest = HEAVY_COOKIE_DOMAINS.some((domain) => url.includes(domain));
 
-        if (isCaptchaRequest) {
+        if (isCaptchaRequest || isHeavyCookieRequest) {
             // Ensure credentials are included
             init = init || {};
             if (!init.credentials) {
@@ -128,6 +167,11 @@ function enhanceNetworkRequests() {
             if (!init.headers.has("Accept")) {
                 init.headers.set("Accept", "*/*");
             }
+
+            // Add cache control for better performance while maintaining freshness
+            if (!init.headers.has("Cache-Control") && !isCaptchaRequest) {
+                init.headers.set("Cache-Control", "private, max-age=300");
+            }
         }
 
         return originalFetch.call(this, input, init);
@@ -136,7 +180,7 @@ function enhanceNetworkRequests() {
     // Store original XMLHttpRequest
     const OriginalXHR = window.XMLHttpRequest;
 
-    // Override XMLHttpRequest for CAPTCHA requests
+    // Override XMLHttpRequest for CAPTCHA and heavy cookie requests
     window.XMLHttpRequest = function (this: XMLHttpRequest) {
         const xhr = new OriginalXHR();
 
@@ -145,9 +189,12 @@ function enhanceNetworkRequests() {
         xhr.open = function (method: string, url: string | URL, ...args: any[]) {
             const urlStr = url.toString();
             const isCaptchaRequest = CAPTCHA_DOMAINS.some((domain) => urlStr.includes(domain));
+            const isHeavyCookieRequest = HEAVY_COOKIE_DOMAINS.some((domain) =>
+                urlStr.includes(domain)
+            );
 
-            if (isCaptchaRequest) {
-                // Ensure credentials are included for CAPTCHA requests
+            if (isCaptchaRequest || isHeavyCookieRequest) {
+                // Ensure credentials are included
                 xhr.withCredentials = true;
             }
 
@@ -160,6 +207,28 @@ function enhanceNetworkRequests() {
     // Copy static properties
     Object.setPrototypeOf(window.XMLHttpRequest, OriginalXHR);
     Object.setPrototypeOf(window.XMLHttpRequest.prototype, OriginalXHR.prototype);
+}
+
+/**
+ * Enhance storage persistence for better cookie and session support
+ */
+function enhanceStoragePersistence() {
+    // Request persistent storage for better data retention
+    if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().then((persistent) => {
+            if (persistent) {
+                console.log("Storage persisted successfully");
+            }
+        });
+    }
+
+    // Estimate storage quota to ensure we have enough space for cookies
+    if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then((estimate) => {
+            const percentUsed = ((estimate.usage || 0) / (estimate.quota || 1)) * 100;
+            console.log(`Storage usage: ${percentUsed.toFixed(2)}%`);
+        });
+    }
 }
 
 /**

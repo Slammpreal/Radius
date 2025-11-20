@@ -171,14 +171,18 @@ class SW {
                 },
                 flags: {
                     rewriterLogs: false,
-                    // Enhanced flags for optimal CAPTCHA and Cloudflare verification support
-                    serviceworkers: true, // Enable service worker support for CAPTCHA iframes
+                    // Enhanced flags for optimal support of complex browser services
+                    serviceworkers: true, // Enable service worker support
                     captureErrors: true, // Capture errors for better debugging
-                    cleanErrors: false, // Keep error messages for CAPTCHA debugging
-                    strictRewrites: false, // Allow flexible rewrites for CAPTCHA domains
-                    syncxhr: true, // Enable synchronous XHR for CAPTCHA callbacks
+                    cleanErrors: false, // Keep error messages for debugging
+                    strictRewrites: false, // Allow flexible rewrites for complex sites
+                    syncxhr: true, // Enable synchronous XHR for complex callbacks
                     scramitize: true, // Enable advanced domain handling
-                    allowFailedIntercepts: true // Continue on failed intercepts for CAPTCHA fallbacks
+                    allowFailedIntercepts: true, // Continue on failed intercepts for better compatibility
+                    // Additional flags for better cookie and site support
+                    naiiveRewriter: false, // Use advanced rewriter for complex sites
+                    captchaSupport: true, // Enhanced CAPTCHA support
+                    cookieStore: true // Better cookie persistence
                 }
             });
             if ("serviceWorker" in navigator) {
