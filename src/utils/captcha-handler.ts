@@ -109,7 +109,8 @@ function fixMessagePortCloning() {
     };
 
     // Override postMessage to properly handle MessagePort transfers
-    (window as any).postMessage = function (message: any, ...args: any[]) {
+    // Note: Using unknown for message type as it can be any cloneable data
+    (window as any).postMessage = function (message: unknown, ...args: any[]) {
         try {
             // Handle both old (targetOrigin, transfer) and new (options) signatures
             const targetOrigin = typeof args[0] === "string" ? args[0] : "*";
@@ -199,7 +200,8 @@ function addCloudflareChallengeHandlers() {
     // This receives the challenge token from Cloudflare after successful verification
     if (typeof (window as any).managedChallengeCallback === "undefined") {
         (window as any).managedChallengeCallback = function (token: string) {
-            console.log("Managed challenge callback received token:", token?.substring(0, 20) + "...");
+            const tokenPreview = token && token.length > 20 ? token.substring(0, 20) + "..." : token;
+            console.log("Managed challenge callback received token:", tokenPreview);
             // The token is automatically used by Cloudflare's scripts
             // This callback is just for logging/debugging purposes
         };
@@ -321,7 +323,9 @@ function enhanceNetworkRequests() {
             }
 
             // Call original open with appropriate arguments
-            // Using type assertion to handle overloaded signature
+            // Note: Using 'as any' here because XMLHttpRequest.open has overloaded signatures
+            // that TypeScript cannot properly infer when calling dynamically with variable arguments.
+            // This is safe because we're calling the same native method with its original signatures.
             const openFn = originalOpen as any;
             if (username !== undefined && password !== undefined) {
                 return openFn(method, url, async ?? true, username, password);
