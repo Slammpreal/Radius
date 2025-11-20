@@ -73,9 +73,6 @@ export function initializeCaptchaHandlers() {
                         if (node.getAttribute("credentialless") !== null) {
                             node.removeAttribute("credentialless");
                         }
-
-                        // Set appropriate attributes for better compatibility
-                        node.setAttribute("allow", "cross-origin-isolated");
                     }
                 }
             });
@@ -215,11 +212,18 @@ function enhanceNetworkRequests() {
 function enhanceStoragePersistence() {
     // Request persistent storage for better data retention
     if (navigator.storage && navigator.storage.persist) {
-        navigator.storage.persist().then((persistent) => {
-            if (persistent) {
-                console.log("Storage persisted successfully");
-            }
-        });
+        navigator.storage
+            .persist()
+            .then((persistent) => {
+                if (persistent) {
+                    console.log("Persistent storage granted for better session support");
+                } else {
+                    console.log("Persistent storage not granted - session data may be cleared");
+                }
+            })
+            .catch((error) => {
+                console.warn("Error requesting persistent storage:", error);
+            });
     }
 
     // Estimate storage quota to ensure we have enough space for cookies

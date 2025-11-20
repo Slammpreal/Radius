@@ -178,11 +178,7 @@ class SW {
                     strictRewrites: false, // Allow flexible rewrites for complex sites
                     syncxhr: true, // Enable synchronous XHR for complex callbacks
                     scramitize: true, // Enable advanced domain handling
-                    allowFailedIntercepts: true, // Continue on failed intercepts for better compatibility
-                    // Additional flags for better cookie and site support
-                    naiiveRewriter: false, // Use advanced rewriter for complex sites
-                    captchaSupport: true, // Enhanced CAPTCHA support
-                    cookieStore: true // Better cookie persistence
+                    allowFailedIntercepts: true // Continue on failed intercepts for better compatibility
                 }
             });
             if ("serviceWorker" in navigator) {

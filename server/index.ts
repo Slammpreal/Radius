@@ -22,11 +22,6 @@ const bareServer = createBareServer("/bare/", {
         maxConnectionsPerIP: parseInt(process.env.BARE_MAX_CONNECTIONS_PER_IP as string) || 1000,
         windowDuration: parseInt(process.env.BARE_WINDOW_DURATION as string) || 60,
         blockDuration: parseInt(process.env.BARE_BLOCK_DURATION as string) || 30
-    },
-    // Enhanced configuration for better cookie and header support
-    headers: {
-        // Increase max header size for sites with heavy cookies
-        maxHeaderSize: 32768 // 32KB instead of default 16KB
     }
 });
 
