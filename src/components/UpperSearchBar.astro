@@ -72,10 +72,8 @@ import { Icon } from "astro-icon/components";
                     if (iframeWin.__uv) {
                         pageURL = iframeWin.__uv.location.href;
                     } else if (iframeWin.$scramjet?.config?.prefix) {
-                        const scramjetURL = iframeWin.location.href;
-                        pageURL = scramjetURL
-                            .replace(iframeWin.location.origin, '')
-                            .replace(iframeWin.$scramjet.config.prefix, '');
+                        // Use scramjet's URL property which contains the decoded URL
+                        pageURL = iframeWin.$scramjet.url.href;
                     } else {
                         pageURL = iframeWin.location.href;
                     }
@@ -99,8 +97,21 @@ import { Icon } from "astro-icon/components";
                                 }
                             }
                         } else if (iframeSrc.includes('/~/scramjet/')) {
+                            // Extract and decode Scramjet URL
                             const encoded = iframeSrc.split('/~/scramjet/')[1];
-                            upperSearchInput.value = encoded || iframeSrc;
+                            if (encoded && typeof $scramjetLoadController !== 'undefined') {
+                                try {
+                                    const { ScramjetController } = $scramjetLoadController();
+                                    // Create a temporary controller instance to decode
+                                    const tempController = new ScramjetController({ prefix: '/~/scramjet/' });
+                                    const decoded = tempController.decodeUrl(encoded);
+                                    upperSearchInput.value = decoded;
+                                } catch {
+                                    upperSearchInput.value = encoded;
+                                }
+                            } else {
+                                upperSearchInput.value = encoded || iframeSrc;
+                            }
                         } else {
                             upperSearchInput.value = iframeSrc;
                         }
@@ -121,13 +132,17 @@ import { Icon } from "astro-icon/components";
                     return;
                 }
 
-                // Regular URL handling - only if iframe exists
+                // Regular URL handling
+                // If we're on the main page with iframe, use it
                 if (iframe && bhl && phl) {
                     iframe.classList.remove("hidden");
                     await sw.ready();
                     iframe.src = sw.encodeURL(inputValue);
                     bhl.classList.add("hidden");
                     phl.classList.remove("hidden");
+                } else {
+                    // Otherwise, navigate to home page with the search query
+                    window.location.href = '/?redir=' + btoa(inputValue);
                 }
             }
         });
