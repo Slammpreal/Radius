@@ -85,6 +85,9 @@ export function initializeCaptchaHandlers() {
  * This prevents "DataCloneError: Failed to execute 'postMessage' on 'Window'" errors
  */
 function fixMessagePortCloning() {
+    // Maximum recursion depth when searching for MessagePort objects
+    const MAX_RECURSION_DEPTH = 10;
+    
     const originalPostMessage = window.postMessage.bind(window);
 
     // Helper to check if an object is a MessagePort
@@ -134,7 +137,7 @@ function fixMessagePortCloning() {
                 const ports: MessagePort[] = [];
                 const collectPorts = (obj: any, depth: number = 0) => {
                     // Limit recursion depth to prevent infinite loops
-                    if (depth > 10) return;
+                    if (depth > MAX_RECURSION_DEPTH) return;
                     
                     if (isMessagePort(obj)) {
                         ports.push(obj);
@@ -177,29 +180,37 @@ function fixMessagePortCloning() {
 /**
  * Add missing Cloudflare challenge solver functions
  * This fixes "ReferenceError: solveSimpleChallenge is not defined" errors
+ * 
+ * Note: These are stub implementations. Cloudflare's actual challenge solving
+ * is handled by their own scripts loaded in the page. These functions just need
+ * to exist to prevent reference errors when Cloudflare scripts try to call them.
  */
 function addCloudflareChallengeHandlers() {
     // Define solveSimpleChallenge for Cloudflare Turnstile/Challenge pages
+    // This is a stub - actual challenge solving is done by Cloudflare's own scripts
     if (typeof (window as any).solveSimpleChallenge === "undefined") {
         (window as any).solveSimpleChallenge = function () {
-            console.log("Simple challenge solver called");
-            // The actual challenge solving is handled by Cloudflare's scripts
-            // This function just needs to exist to prevent the ReferenceError
+            console.log("Simple challenge solver called - handled by Cloudflare scripts");
+            // Empty implementation - Cloudflare's scripts handle the actual solving
         };
     }
 
     // Add support for managed challenge callback
+    // This receives the challenge token from Cloudflare after successful verification
     if (typeof (window as any).managedChallengeCallback === "undefined") {
         (window as any).managedChallengeCallback = function (token: string) {
-            console.log("Managed challenge callback:", token);
-            // Handle the challenge token
+            console.log("Managed challenge callback received token:", token?.substring(0, 20) + "...");
+            // The token is automatically used by Cloudflare's scripts
+            // This callback is just for logging/debugging purposes
         };
     }
 
     // Add support for interactive challenge
+    // Called when user interaction is required (e.g., clicking a checkbox)
     if (typeof (window as any).interactiveChallenge === "undefined") {
         (window as any).interactiveChallenge = function () {
-            console.log("Interactive challenge called");
+            console.log("Interactive challenge initiated - waiting for user interaction");
+            // Cloudflare's scripts handle the actual UI and interaction
         };
     }
 }
@@ -290,8 +301,11 @@ function enhanceNetworkRequests() {
         const xhr = new OriginalXHR();
 
         // Store original open method
-        const originalOpen = xhr.open;
+        const originalOpen = xhr.open.bind(xhr);
+        
+        // Override open method to add CAPTCHA support
         xhr.open = function (
+            this: XMLHttpRequest,
             method: string,
             url: string | URL,
             async?: boolean,
@@ -306,18 +320,19 @@ function enhanceNetworkRequests() {
                 xhr.withCredentials = true;
             }
 
-            // Call with appropriate number of arguments based on what was provided
+            // Call original open with appropriate arguments
+            // Using type assertion to handle overloaded signature
+            const openFn = originalOpen as any;
             if (username !== undefined && password !== undefined) {
-                return originalOpen.call(this, method, url, async ?? true, username, password);
+                return openFn(method, url, async ?? true, username, password);
             } else if (username !== undefined) {
-                return originalOpen.call(this, method, url, async ?? true, username);
+                return openFn(method, url, async ?? true, username);
             } else if (async !== undefined) {
-                return originalOpen.call(this, method, url, async);
+                return openFn(method, url, async);
             } else {
-                // Use the 2-argument overload
-                return (originalOpen as any).call(this, method, url);
+                return openFn(method, url);
             }
-        };
+        } as typeof xhr.open;
 
         return xhr;
     } as any;
