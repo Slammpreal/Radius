@@ -219,30 +219,35 @@ function patchPostMessage() {
     /**
      * Enhanced postMessage that properly handles MessagePort transfers
      */
-    const enhancedPostMessage = function (this: Window, message: any, targetOrigin: string, transfer?: any[]) {
+    const enhancedPostMessage = function (
+        this: Window,
+        message: any,
+        targetOrigin: string,
+        transfer?: any[]
+    ) {
         try {
             // Extract MessagePorts from the message
             const ports: MessagePort[] = [];
-            
+
             // Check if transfer array is provided
             if (transfer && Array.isArray(transfer)) {
                 // Transfer array already contains ports, use it directly
                 return originalWindowPostMessage.call(this, message, targetOrigin, transfer);
             }
-            
+
             // Check if the message contains MessagePort objects
-            if (message && typeof message === 'object') {
+            if (message && typeof message === "object") {
                 // Recursively find MessagePorts in the message
                 const findPorts = (obj: any, visited = new WeakSet()): void => {
-                    if (!obj || typeof obj !== 'object') return;
+                    if (!obj || typeof obj !== "object") return;
                     if (visited.has(obj)) return;
                     visited.add(obj);
-                    
+
                     if (obj instanceof MessagePort) {
                         ports.push(obj);
                         return;
                     }
-                    
+
                     // Check arrays
                     if (Array.isArray(obj)) {
                         for (const item of obj) {
@@ -250,7 +255,7 @@ function patchPostMessage() {
                         }
                         return;
                     }
-                    
+
                     // Check object properties
                     for (const key in obj) {
                         try {
@@ -262,56 +267,56 @@ function patchPostMessage() {
                         }
                     }
                 };
-                
+
                 findPorts(message);
             }
-            
+
             // If we found MessagePorts, transfer them
             if (ports.length > 0) {
                 return originalWindowPostMessage.call(this, message, targetOrigin, ports);
             }
-            
+
             // Otherwise, use the original call
             return originalWindowPostMessage.call(this, message, targetOrigin, transfer);
         } catch (error) {
             // If our enhanced version fails, fall back to original
-            console.warn('Enhanced postMessage failed, using original:', error);
+            console.warn("Enhanced postMessage failed, using original:", error);
             return originalWindowPostMessage.call(this, message, targetOrigin, transfer);
         }
     };
 
     // Override Window.prototype.postMessage
     try {
-        Object.defineProperty(Window.prototype, 'postMessage', {
+        Object.defineProperty(Window.prototype, "postMessage", {
             value: enhancedPostMessage,
             writable: true,
             enumerable: true,
             configurable: true
         });
     } catch (e) {
-        console.warn('Failed to override Window.prototype.postMessage:', e);
+        console.warn("Failed to override Window.prototype.postMessage:", e);
     }
 
     // Also patch the window.postMessage directly
     try {
-        Object.defineProperty(window, 'postMessage', {
+        Object.defineProperty(window, "postMessage", {
             value: enhancedPostMessage.bind(window),
             writable: true,
             enumerable: true,
             configurable: true
         });
     } catch (e) {
-        console.warn('Failed to override window.postMessage:', e);
+        console.warn("Failed to override window.postMessage:", e);
     }
 
     // Patch HTMLIFrameElement.contentWindow.postMessage
     const originalIFrameContentWindowGetter = Object.getOwnPropertyDescriptor(
         HTMLIFrameElement.prototype,
-        'contentWindow'
+        "contentWindow"
     );
 
     if (originalIFrameContentWindowGetter) {
-        Object.defineProperty(HTMLIFrameElement.prototype, 'contentWindow', {
+        Object.defineProperty(HTMLIFrameElement.prototype, "contentWindow", {
             get: function () {
                 const contentWindow = originalIFrameContentWindowGetter.get!.call(this);
                 if (contentWindow && contentWindow.postMessage) {
