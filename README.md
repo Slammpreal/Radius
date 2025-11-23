@@ -124,8 +124,9 @@ Radius has been optimized for websites with heavy cookies, service workers, and 
 - **Improved Connection Stability**: Keep-alive and extended timeouts (120s)
 - **Better Error Handling**: Comprehensive error recovery and logging
 - **Optimized for Complex Sites**: Support for Amazon, Google, Facebook, Netflix, and more
+- **Iframe Tab/Window Interception**: Automatically prevents proxied sites from opening new tabs or windows, keeping all navigation within the iframe for a seamless experience
 
-For detailed information, see [IMPROVEMENTS.md](IMPROVEMENTS.md)
+For detailed information, see [IMPROVEMENTS.md](IMPROVEMENTS.md) and [IFRAME_INTERCEPTION.md](IFRAME_INTERCEPTION.md)
 
 ### Bare Server Connection Limiter
 These variables control the rate limiting for the Bare server to prevent abuse while allowing normal browsing (optional but recomended) can be ajusted based on security prefrences and expected usage:

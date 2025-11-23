@@ -29,19 +29,27 @@ export function injectIframeInterceptor(
 
         // Override window.open to intercept new tab/window attempts
         iframeWindow.open = function (url?: string | URL, target?: string, features?: string): Window | null {
-            if (url) {
-                const urlString = url.toString();
-                console.log(`[Iframe Interceptor] Intercepted window.open: ${urlString}`);
-                
-                // Instead of opening a new window, navigate the iframe
-                onNavigate(urlString);
-                
-                // Return a mock window object to prevent errors
-                return iframeWindow;
+            // If no URL provided, return null as there's nothing to navigate to
+            if (!url) {
+                console.warn("[Iframe Interceptor] window.open called without URL");
+                return null;
             }
             
-            // If no URL, call original (though this is rare)
-            return originalOpen.call(iframeWindow, url, target, features);
+            const urlString = url.toString();
+            console.log(`[Iframe Interceptor] Intercepted window.open: ${urlString}`);
+            
+            // Instead of opening a new window, navigate the iframe
+            onNavigate(urlString);
+            
+            // Return a Proxy object that mimics a Window to prevent errors
+            return new Proxy({} as Window, {
+                get() {
+                    return null;
+                },
+                set() {
+                    return true;
+                }
+            });
         };
 
         // Intercept clicks on links with target="_blank"
@@ -96,10 +104,16 @@ export function injectIframeInterceptor(
                 });
             });
             
-            observer.observe(doc.body || doc.documentElement, {
-                childList: true,
-                subtree: true
-            });
+            // Ensure we have a valid target for observation before starting
+            const observeTarget = doc.body || doc.documentElement;
+            if (observeTarget) {
+                observer.observe(observeTarget, {
+                    childList: true,
+                    subtree: true
+                });
+            } else {
+                console.warn("[Iframe Interceptor] No valid target for MutationObserver");
+            }
         };
 
         // Run the interception setup

@@ -100,6 +100,9 @@ self.addEventListener("fetch", function (event) {
                 const url = event.request.url;
                 const isCaptcha = isCaptchaRequest(url);
                 const isHeavyCookie = isHeavyCookieSite(url);
+                
+                // Check if this is a proxied request before modifying
+                const isProxiedRequest = url.startsWith(location.origin + __uv$config.prefix) || sj.route(event);
 
                 // Enhanced handling for CAPTCHA and heavy cookie requests
                 let request = event.request;
@@ -119,7 +122,7 @@ self.addEventListener("fetch", function (event) {
                 }
                 
                 // Inject interceptor script into proxied HTML responses
-                if (url.startsWith(location.origin + __uv$config.prefix) || sj.route(event)) {
+                if (isProxiedRequest) {
                     response = await injectInterceptorScript(response);
                 }
                 
@@ -147,10 +150,11 @@ const INTERCEPTOR_SCRIPT = `
         if (url) {
             console.log('[Proxy Interceptor] Redirecting window.open to same window:', url);
             // Navigate in the current window instead of opening a new one
+            // The URL is already proxied at this point, so we can directly navigate
             window.location.href = url;
-            return window;
+            return null;
         }
-        return originalOpen.call(this, url, target, features);
+        return null;
     };
     
     // Remove target="_blank" from all links
@@ -203,15 +207,25 @@ async function injectInterceptorScript(response) {
     try {
         const text = await response.text();
         
+        // Check if script was already injected to prevent duplicates
+        if (text.includes("[Proxy Interceptor]")) {
+            return new Response(text, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
+            });
+        }
+        
         // Inject the script just after <head> or at the beginning of <body>
+        // Use regex with once flag to replace only the first occurrence
         let modifiedHtml = text;
         
-        if (text.includes("<head>")) {
-            modifiedHtml = text.replace("<head>", "<head>" + INTERCEPTOR_SCRIPT);
-        } else if (text.includes("<body>")) {
-            modifiedHtml = text.replace("<body>", "<body>" + INTERCEPTOR_SCRIPT);
-        } else if (text.includes("<html>")) {
-            modifiedHtml = text.replace("<html>", "<html>" + INTERCEPTOR_SCRIPT);
+        if (/<head>/i.test(text)) {
+            modifiedHtml = text.replace(/<head>/i, "<head>" + INTERCEPTOR_SCRIPT);
+        } else if (/<body>/i.test(text)) {
+            modifiedHtml = text.replace(/<body>/i, "<body>" + INTERCEPTOR_SCRIPT);
+        } else if (/<html>/i.test(text)) {
+            modifiedHtml = text.replace(/<html>/i, "<html>" + INTERCEPTOR_SCRIPT);
         }
         
         // Return modified response
