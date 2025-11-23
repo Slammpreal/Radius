@@ -32,7 +32,7 @@ const link = Astro.url.searchParams.get("redir");
                 </div>
             </div> */}
         </div>
-        <iframe id="iframe" class="fixed h-[calc(100%-3.5rem)] mt-14 w-full hidden bg-(--background)" />
+        <iframe id="iframe" class="fixed h-[calc(100%-3.5rem)] mt-14 w-full hidden bg-(--background)" sandbox="allow-forms allow-modals allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation allow-top-navigation-by-user-activation" />
         <link-element data-link={link} />
     </div>
 </Layout>
@@ -129,7 +129,36 @@ const link = Astro.url.searchParams.get("redir");
             phlImage.src = object;
             bhl.classList.add("hidden");
             phl.classList.remove("hidden");
-        }); 
+            
+            // Inject tab interceptor into the iframe
+            // This works because proxied content is same-origin
+            try {
+                const script = iframeWin!.document.createElement('script');
+                script.src = '/radius-client.js';
+                script.async = false; // Load synchronously to ensure it runs early
+                (iframeWin!.document.head || iframeWin!.document.documentElement).appendChild(script);
+            } catch (e) {
+                console.warn('Radius: Could not inject client script:', e);
+            }
+        });
+        
+        // Listen for messages from the radius client in the iframe
+        window.addEventListener('message', (event) => {
+            // Only handle messages from our iframe
+            if (event.source !== iframeWin) {
+                return;
+            }
+            
+            // Handle radius-open-url messages
+            if (event.data && event.data.type === 'radius-open-url') {
+                const url = event.data.url;
+                if (url && url !== 'about:blank') {
+                    console.log('Radius: Intercepted popup, loading in iframe:', url);
+                    // Load the URL in the main iframe instead of opening a new tab
+                    iframe.src = sw.encodeURL(url);
+                }
+            }
+        });
     }
 
     class CustomComponent extends HTMLElement {
