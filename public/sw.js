@@ -100,6 +100,12 @@ self.addEventListener("fetch", function (event) {
                 const url = event.request.url;
                 const isCaptcha = isCaptchaRequest(url);
                 const isHeavyCookie = isHeavyCookieSite(url);
+                
+                // Safely check if this is a proxied request using optional chaining
+                const uvPrefix = (typeof __uv$config !== 'undefined' && __uv$config?.prefix) || null;
+                const isUvRequest = uvPrefix ? url.startsWith(location.origin + uvPrefix) : false;
+                const isSjRequest = sj.route(event);
+                const isProxiedRequest = isUvRequest || isSjRequest;
 
                 // Enhanced handling for CAPTCHA and heavy cookie requests
                 let request = event.request;
@@ -109,13 +115,21 @@ self.addEventListener("fetch", function (event) {
                     request = enhanceHeavyCookieRequest(event.request);
                 }
 
-                if (url.startsWith(location.origin + __uv$config.prefix)) {
-                    return await uv.fetch(event);
-                } else if (sj.route(event)) {
-                    return await sj.fetch(event);
+                let response;
+                if (isUvRequest) {
+                    response = await uv.fetch(event);
+                } else if (isSjRequest) {
+                    response = await sj.fetch(event);
                 } else {
-                    return await fetch(request);
+                    response = await fetch(request);
                 }
+                
+                // Inject interceptor script into proxied HTML responses
+                if (isProxiedRequest) {
+                    response = await injectInterceptorScript(response);
+                }
+                
+                return response;
             } catch (error) {
                 console.error("Service worker fetch error:", error);
                 // Return a proper error response instead of failing silently
@@ -128,6 +142,123 @@ self.addEventListener("fetch", function (event) {
         })()
     );
 });
+
+// Script to inject into proxied pages to intercept new tab/window attempts
+const INTERCEPTOR_SCRIPT = `
+<script>
+(function() {
+    // Intercept window.open to prevent new tabs/windows from opening
+    const originalOpen = window.open;
+    window.open = function(url, target, features) {
+        if (url) {
+            console.log('[Proxy Interceptor] Redirecting window.open to same window:', url);
+            // Navigate in the current window instead of opening a new one
+            // The URL is already proxied at this point, so we can directly navigate
+            window.location.href = url;
+            
+            // Return a Proxy that mimics a Window object for compatibility
+            return new Proxy({}, {
+                get: function() { return null; },
+                set: function() { return true; }
+            });
+        }
+        return null;
+    };
+    
+    // Remove target="_blank" from all links
+    function removeTargetBlank() {
+        document.querySelectorAll('a[target="_blank"], a[target="_new"]').forEach(function(anchor) {
+            anchor.removeAttribute('target');
+        });
+    }
+    
+    // Run on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', removeTargetBlank);
+    } else {
+        removeTargetBlank();
+    }
+    
+    // Watch for dynamically added links
+    if (typeof MutationObserver !== 'undefined') {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    // Check if it's an Element node (nodeType === 1)
+                    if (node.nodeType !== 1) return;
+                    
+                    if (node.tagName === 'A' && (node.getAttribute('target') === '_blank' || node.getAttribute('target') === '_new')) {
+                        node.removeAttribute('target');
+                    }
+                    if (node.querySelectorAll) {
+                        node.querySelectorAll('a[target="_blank"], a[target="_new"]').forEach(function(anchor) {
+                            anchor.removeAttribute('target');
+                        });
+                    }
+                });
+            });
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+})();
+</script>
+`;
+
+// Helper function to inject script into HTML responses
+async function injectInterceptorScript(response) {
+    const contentType = response.headers.get("content-type") || "";
+    
+    // Only inject into HTML responses
+    if (!contentType.includes("text/html")) {
+        return response;
+    }
+    
+    try {
+        const text = await response.text();
+        
+        // Check if script was already injected to prevent duplicates
+        if (text.includes("[Proxy Interceptor]")) {
+            return new Response(text, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
+            });
+        }
+        
+        // Inject the script just after opening tags
+        // Handle both normal opening tags and self-closing tags
+        let modifiedHtml = text;
+        let injected = false;
+        
+        // Try to inject after <head> tag (normal or self-closing)
+        if (!injected && /<head(\s[^>]*)?>/i.test(text)) {
+            modifiedHtml = text.replace(/<head(\s[^>]*)?>/i, match => match + INTERCEPTOR_SCRIPT);
+            injected = true;
+        }
+        
+        // Fallback: inject after <body> tag (normal or self-closing)
+        if (!injected && /<body(\s[^>]*)?>/i.test(text)) {
+            modifiedHtml = text.replace(/<body(\s[^>]*)?>/i, match => match + INTERCEPTOR_SCRIPT);
+            injected = true;
+        }
+        
+        // Last resort: inject after <html> tag (normal or self-closing)
+        if (!injected && /<html(\s[^>]*)?>/i.test(text)) {
+            modifiedHtml = text.replace(/<html(\s[^>]*)?>/i, match => match + INTERCEPTOR_SCRIPT);
+            injected = true;
+        }
+        
+        // Return modified response
+        return new Response(modifiedHtml, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+        });
+    } catch (error) {
+        console.error("Error injecting interceptor script:", error);
+        return response;
+    }
+}
 
 // Add error handling for service worker activation
 self.addEventListener("activate", function (event) {
