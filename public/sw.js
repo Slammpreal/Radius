@@ -101,10 +101,8 @@ self.addEventListener("fetch", function (event) {
                 const isCaptcha = isCaptchaRequest(url);
                 const isHeavyCookie = isHeavyCookieSite(url);
                 
-                // Safely check if this is a proxied request
-                const uvPrefix = (typeof __uv$config !== 'undefined' && __uv$config && __uv$config.prefix) 
-                    ? __uv$config.prefix 
-                    : null;
+                // Safely check if this is a proxied request using optional chaining
+                const uvPrefix = (typeof __uv$config !== 'undefined' && __uv$config?.prefix) || null;
                 const isUvRequest = uvPrefix ? url.startsWith(location.origin + uvPrefix) : false;
                 const isSjRequest = sj.route(event);
                 const isProxiedRequest = isUvRequest || isSjRequest;
@@ -228,24 +226,24 @@ async function injectInterceptorScript(response) {
         }
         
         // Inject the script just after opening tags
-        // Use regex with case-insensitive flag and handle both normal and self-closing tags
+        // Handle both normal opening tags and self-closing tags
         let modifiedHtml = text;
         let injected = false;
         
-        // Try to inject after <head> (including self-closing <head/>)
-        if (!injected && /<head(\s[^>]*)?>|<head\s*\/>/i.test(text)) {
+        // Try to inject after <head> tag (normal or self-closing)
+        if (!injected && /<head(\s[^>]*)?>/i.test(text)) {
             modifiedHtml = text.replace(/<head(\s[^>]*)?>/i, match => match + INTERCEPTOR_SCRIPT);
             injected = true;
         }
         
-        // Fallback: inject after <body> (including self-closing <body/>)
-        if (!injected && /<body(\s[^>]*)?>|<body\s*\/>/i.test(text)) {
+        // Fallback: inject after <body> tag (normal or self-closing)
+        if (!injected && /<body(\s[^>]*)?>/i.test(text)) {
             modifiedHtml = text.replace(/<body(\s[^>]*)?>/i, match => match + INTERCEPTOR_SCRIPT);
             injected = true;
         }
         
-        // Last resort: inject after <html> (including self-closing <html/>)
-        if (!injected && /<html(\s[^>]*)?>|<html\s*\/>/i.test(text)) {
+        // Last resort: inject after <html> tag (normal or self-closing)
+        if (!injected && /<html(\s[^>]*)?>/i.test(text)) {
             modifiedHtml = text.replace(/<html(\s[^>]*)?>/i, match => match + INTERCEPTOR_SCRIPT);
             injected = true;
         }

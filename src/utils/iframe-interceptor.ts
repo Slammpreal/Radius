@@ -88,7 +88,7 @@ export function injectIframeInterceptor(
                 mutations.forEach((mutation) => {
                     mutation.addedNodes.forEach((node) => {
                         // Check if it's an Element node (nodeType === 1)
-                        if (!(node instanceof Node) || node.nodeType !== 1) return;
+                        if (node.nodeType !== 1) return;
                         
                         if (node instanceof HTMLAnchorElement) {
                             const targetAttr = node.getAttribute("target");
