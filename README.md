@@ -7,11 +7,6 @@
 <p align="center">
 </p>
 
-# [Radius](https://radiusproxy.app)
-![Stars](https://shields.io/github/stars/RadiusProxy/Radius?style=flat-square&logo=github)
-![Forks](https://shields.io/github/forks/RadiusProxy/Radius?style=flat-square&logo=github)
-![Last Commit](https://shields.io/github/last-commit/RadiusProxy/Radius?style=flat-square&logo=github)
-
 Radius is a simple and clean web proxy designed for speed and ease-of-use, made in Astro.
 
 Join the [Discord!](https://discord.gg/cCfytCX6Sv) (Or [TitaniumNetwork's](https://discord.gg/unblock))
@@ -199,6 +194,7 @@ If you can not deploy, visit a example deployment with Radius using QuickDeploy 
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev of Radius <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev of Radius <br>
 [All of the contributors!](https://github.com/sriail/Radius/graphs/contributors)
+
 
 
 
