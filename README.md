@@ -2,6 +2,9 @@
     <a href="https://radiusproxy.app">
         <img src="https://drive.google.com/uc?id=1DMvvZ6PHFw0GLJc4-JDf8-UAf-V6J6Ta" width="640" height="480" />
     </a>
+    </p>
+<h1 align="center" id="readme-top">Radius</h1>
+<p align="center">
 </p>
 
 # [Radius](https://radiusproxy.app)
@@ -196,6 +199,7 @@ If you can not deploy, visit a example deployment with Radius using QuickDeploy 
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev of Radius <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev of Radius <br>
 [All of the contributors!](https://github.com/sriail/Radius/graphs/contributors)
+
 
 
 
