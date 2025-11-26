@@ -8,8 +8,6 @@
 <p align="center">
 </p>
 
-If you can't donate, tell your friends about Radius!
-
 ## Tech Stack
 [Astro](https://astro.build) - Server-side rendering and static site generation<br>
 [Fastify](https://fastify.dev) - HTTP server <br>
@@ -178,6 +176,7 @@ If you can not deploy, visit a example deployment with Radius using QuickDeploy 
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev of Radius <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev of Radius <br>
 [All of the contributors!](https://github.com/sriail/Radius/graphs/contributors)
+
 
 
 
