@@ -275,27 +275,16 @@ function enhanceStoragePersistence() {
 }
 
 /**
- * Setup message handler to listen for CAPTCHA-related messages
- * This ensures that CAPTCHA widgets can communicate with their parent pages
+ * Setup message handler placeholder for CAPTCHA-related messages
+ * This function exists to be called as part of initialization but no longer
+ * modifies postMessage behavior since overriding it broke MessagePort transfers
  */
 function setupPostMessageHandler() {
-    // Listen for CAPTCHA-related messages and allow them to be processed normally
-    window.addEventListener("message", (event) => {
-        // Check if this is a CAPTCHA-related message
-        const origin = event.origin || "";
-        const isCaptchaOrigin = CAPTCHA_DOMAINS.some((domain) =>
-            origin.toLowerCase().includes(domain)
-        );
-
-        if (isCaptchaOrigin) {
-            // Allow CAPTCHA messages to be processed normally
-            // The browser's default handling will take care of it
-            return;
-        }
-    });
-    // Note: We don't override postMessage as it can break transferable objects
-    // like MessagePort. The proxy should handle cross-origin issues at the
-    // service worker level instead.
+    // Note: We intentionally don't override postMessage as it can break
+    // transferable objects like MessagePort. The proxy handles cross-origin
+    // issues at the service worker level instead.
+    // CAPTCHA widgets communicate via postMessage with their own origins,
+    // which works natively without intervention.
 }
 
 /**
