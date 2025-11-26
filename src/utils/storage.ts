@@ -2,6 +2,7 @@
 const storageCache = new Map<string, { value: string; timestamp: number }>();
 const STORAGE_CACHE_TTL = 5000; // 5 seconds
 const STORAGE_CACHE_MAX_SIZE = 100;
+const STORAGE_CACHE_EVICT_COUNT = 20; // Evict 20% of cache
 
 class StoreManager<Prefix extends string> {
     #prefix: string;
@@ -23,11 +24,14 @@ class StoreManager<Prefix extends string> {
         // Get from localStorage
         const value = localStorage.getItem(fullKey) as string;
 
-        // Update cache
+        // Update cache with batch eviction
         if (storageCache.size >= STORAGE_CACHE_MAX_SIZE) {
-            const firstKey = storageCache.keys().next().value;
-            if (firstKey !== undefined) {
-                storageCache.delete(firstKey);
+            // Remove oldest entries using iterator to avoid array allocation
+            let evicted = 0;
+            for (const cacheKey of storageCache.keys()) {
+                if (evicted >= STORAGE_CACHE_EVICT_COUNT) break;
+                storageCache.delete(cacheKey);
+                evicted++;
             }
         }
         if (value !== null) {

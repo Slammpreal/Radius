@@ -39,6 +39,7 @@ const HEAVY_COOKIE_DOMAINS = new Set([
 // Cache for domain checks to avoid redundant operations
 const domainCheckCache = new Map<string, boolean>();
 const DOMAIN_CACHE_MAX_SIZE = 500;
+const DOMAIN_CACHE_EVICT_COUNT = 50; // Evict 10% of cache
 
 // Helper to check if URL matches any domain
 function matchesDomain(url: string, domains: Set<string>): boolean {
@@ -56,11 +57,13 @@ function matchesDomain(url: string, domains: Set<string>): boolean {
         }
     }
 
-    // Cache with size limit
+    // Cache with size limit and batch eviction
     if (domainCheckCache.size >= DOMAIN_CACHE_MAX_SIZE) {
-        const firstKey = domainCheckCache.keys().next().value;
-        if (firstKey !== undefined) {
-            domainCheckCache.delete(firstKey);
+        let evicted = 0;
+        for (const key of domainCheckCache.keys()) {
+            if (evicted >= DOMAIN_CACHE_EVICT_COUNT) break;
+            domainCheckCache.delete(key);
+            evicted++;
         }
     }
     domainCheckCache.set(cacheKey, result);

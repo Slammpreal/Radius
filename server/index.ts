@@ -24,9 +24,13 @@ const ROUTING_CACHE_TTL = 60000; // 1 minute
 // Helper to manage routing cache with TTL and size limit
 const cacheRoutingDecision = (url: string, decision: "bare" | "wisp" | "static"): void => {
     if (routingCache.size >= ROUTING_CACHE_MAX_SIZE) {
-        // Remove oldest entries (first 100)
-        const keysToDelete = Array.from(routingCache.keys()).slice(0, 100);
-        keysToDelete.forEach((key) => routingCache.delete(key));
+        // Remove oldest entries using iterator to avoid array allocation
+        let evicted = 0;
+        for (const key of routingCache.keys()) {
+            if (evicted >= 100) break;
+            routingCache.delete(key);
+            evicted++;
+        }
     }
     routingCache.set(url, decision);
 };

@@ -12,6 +12,7 @@ import {
 // Cache for URL encoding to avoid redundant computations
 const urlEncodingCache = new Map<string, string>();
 const URL_CACHE_MAX_SIZE = 500;
+const URL_CACHE_EVICT_COUNT = 50; // Evict 10% of cache
 
 // Cache for transport settings to avoid redundant storage reads
 let cachedTransportSettings: {
@@ -130,11 +131,15 @@ class SW {
                 ? `${__uv$config.prefix}${__uv$config.encodeUrl!(input)}`
                 : this.#scramjetController!.encodeUrl(input);
 
-        // Cache the result
+        // Cache the result with iterator-based eviction
         if (urlEncodingCache.size >= URL_CACHE_MAX_SIZE) {
-            // Remove oldest entries
-            const keysToDelete = Array.from(urlEncodingCache.keys()).slice(0, 50);
-            keysToDelete.forEach((key) => urlEncodingCache.delete(key));
+            // Remove oldest entries using iterator to avoid array allocation
+            let evicted = 0;
+            for (const key of urlEncodingCache.keys()) {
+                if (evicted >= URL_CACHE_EVICT_COUNT) break;
+                urlEncodingCache.delete(key);
+                evicted++;
+            }
         }
         urlEncodingCache.set(cacheKey, encoded);
 

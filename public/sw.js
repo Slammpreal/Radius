@@ -21,9 +21,11 @@ const sj = new ScramjetServiceWorker({
 const routeCache = new Map();
 const ROUTE_CACHE_MAX_SIZE = 500;
 const ROUTE_CACHE_TTL = 30000; // 30 seconds
+const CACHE_EVICT_COUNT = 50; // Evict 10% of cache
 
 // Cache for domain checks to avoid redundant string operations
 const domainCheckCache = new Map();
+const DOMAIN_CHECK_CACHE_MAX_SIZE = 500;
 
 // Enhanced CAPTCHA and Cloudflare verification support
 // Use Set for O(1) lookup instead of Array with some()
@@ -73,10 +75,14 @@ function isCaptchaRequest(url) {
         }
     }
 
-    // Cache with size limit
-    if (domainCheckCache.size >= 1000) {
-        const firstKey = domainCheckCache.keys().next().value;
-        domainCheckCache.delete(firstKey);
+    // Cache with size limit and batch eviction
+    if (domainCheckCache.size >= DOMAIN_CHECK_CACHE_MAX_SIZE) {
+        let evicted = 0;
+        for (const key of domainCheckCache.keys()) {
+            if (evicted >= CACHE_EVICT_COUNT) break;
+            domainCheckCache.delete(key);
+            evicted++;
+        }
     }
     domainCheckCache.set(cacheKey, result);
     return result;
@@ -98,10 +104,14 @@ function isHeavyCookieSite(url) {
         }
     }
 
-    // Cache with size limit
-    if (domainCheckCache.size >= 1000) {
-        const firstKey = domainCheckCache.keys().next().value;
-        domainCheckCache.delete(firstKey);
+    // Cache with size limit and batch eviction
+    if (domainCheckCache.size >= DOMAIN_CHECK_CACHE_MAX_SIZE) {
+        let evicted = 0;
+        for (const key of domainCheckCache.keys()) {
+            if (evicted >= CACHE_EVICT_COUNT) break;
+            domainCheckCache.delete(key);
+            evicted++;
+        }
     }
     domainCheckCache.set(cacheKey, result);
     return result;
@@ -175,10 +185,14 @@ self.addEventListener("fetch", function (event) {
                         timestamp: now
                     };
 
-                    // Cache with size limit
+                    // Cache with size limit and batch eviction
                     if (routeCache.size >= ROUTE_CACHE_MAX_SIZE) {
-                        const firstKey = routeCache.keys().next().value;
-                        routeCache.delete(firstKey);
+                        let evicted = 0;
+                        for (const key of routeCache.keys()) {
+                            if (evicted >= CACHE_EVICT_COUNT) break;
+                            routeCache.delete(key);
+                            evicted++;
+                        }
                     }
                     routeCache.set(url, routeInfo);
                 }
