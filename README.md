@@ -57,7 +57,7 @@ Radius can be easily deployed to various platforms with the bundled backend func
 ## Quick Deployment
 
 ## Deploy to Heroku
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/RadiusProxy/Radius)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/sriail/Radius)
 
 Heroku fully supports WebSocket connections and is recommended for production deployments of the site.
 
@@ -68,10 +68,10 @@ git push heroku main
 ```
 
 ## Deploy to Replit
-[![Run on Replit](https://replit.com/badge/github/RadiusProxy/Radius)](https://replit.com/new/github/RadiusProxy/Radius)
+[![Run on Replit](https://replit.com/badge/github/RadiusProxy/Radius)](https://replit.com/new/github/sriail/Radius)
 
 ## Deploy to CodeSandbox
-[![Edit in CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/github/RadiusProxy/Radius)
+[![Edit in CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/github/sriail/Radius)
 
 ## Deploy with Docker
 
@@ -176,6 +176,7 @@ If you can not deploy, visit a example deployment with Radius using QuickDeploy 
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev of Radius <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev of Radius <br>
 [All of the contributors!](https://github.com/sriail/Radius/graphs/contributors)
+
 
 
 
