@@ -179,10 +179,10 @@ const INTERCEPTOR_SCRIPT = `
         window.___grecaptcha_cfg = { clients: {} };
     }
     if (typeof window.hcaptcha === 'undefined') {
-        window.hcaptcha = window.hcaptcha || {};
+        window.hcaptcha = {};
     }
     if (typeof window.turnstile === 'undefined') {
-        window.turnstile = window.turnstile || {};
+        window.turnstile = {};
     }
     
     // Intercept window.open but allow CAPTCHA-related popups
@@ -206,6 +206,9 @@ const INTERCEPTOR_SCRIPT = `
     };
     
     // Enhanced postMessage handler for CAPTCHA communication
+    // NOTE: Using '*' as targetOrigin is required in proxy environment because
+    // CAPTCHA domains are rewritten and cross-origin checks would fail otherwise.
+    // This is a necessary tradeoff for CAPTCHA functionality within the proxy.
     var originalPostMessage = window.postMessage;
     window.postMessage = function(message, targetOrigin, transfer) {
         // Allow all CAPTCHA-related postMessage communications

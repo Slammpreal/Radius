@@ -277,6 +277,10 @@ function enhanceStoragePersistence() {
 /**
  * Setup postMessage handler to enable CAPTCHA communication
  * This ensures that CAPTCHA widgets can communicate with their parent pages
+ *
+ * NOTE: Using '*' as targetOrigin is required in proxy environment because
+ * CAPTCHA domains are rewritten and cross-origin checks would fail otherwise.
+ * This is a necessary tradeoff for CAPTCHA functionality within the proxy.
  */
 function setupPostMessageHandler() {
     // Listen for CAPTCHA-related messages
