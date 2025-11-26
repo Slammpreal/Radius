@@ -11,6 +11,8 @@
  * - Missing challenge function handlers
  */
 
+import { fixPostMessage } from "./post-message-fix";
+
 /**
  * List of CAPTCHA and verification-related domains
  */
@@ -61,7 +63,7 @@ export function initializeCaptchaHandlers() {
     }
 
     // Fix postMessage to properly handle MessagePort transfers
-    fixPostMessageForCaptcha();
+    fixPostMessage(window);
 
     // Add CAPTCHA challenge handlers
     addCaptchaChallengeHandlers();
@@ -237,86 +239,6 @@ function enhanceNetworkRequests() {
     // Copy static properties
     Object.setPrototypeOf(window.XMLHttpRequest, OriginalXHR);
     Object.setPrototypeOf(window.XMLHttpRequest.prototype, OriginalXHR.prototype);
-}
-
-/**
- * Fix postMessage to properly handle MessagePort transfers
- * This prevents DataCloneError when CAPTCHA providers communicate between frames
- */
-function fixPostMessageForCaptcha() {
-    if (typeof window === "undefined" || !window.postMessage) return;
-
-    // Store the original postMessage
-    const originalPostMessage = window.postMessage.bind(window);
-
-    // Create a wrapper that properly handles MessagePort transfers
-    window.postMessage = function (
-        message: any,
-        targetOriginOrOptions?: string | WindowPostMessageOptions,
-        transfer?: Transferable[]
-    ) {
-        try {
-            // Handle both function signatures:
-            // postMessage(message, targetOrigin, transfer)
-            // postMessage(message, options)
-            if (typeof targetOriginOrOptions === "object" && targetOriginOrOptions !== null) {
-                // New signature with options object
-                const options = targetOriginOrOptions as WindowPostMessageOptions;
-
-                // Ensure transfer array contains only valid transferables
-                if (options.transfer) {
-                    options.transfer = filterValidTransferables(options.transfer);
-                }
-
-                return originalPostMessage(message, options);
-            }
-
-            // Old signature with targetOrigin string
-            const targetOrigin = targetOriginOrOptions || "*";
-
-            // Filter transfer array to only include valid transferables
-            const validTransfer = transfer ? filterValidTransferables(transfer) : undefined;
-
-            return originalPostMessage(message, targetOrigin, validTransfer);
-        } catch (error) {
-            // If the call fails, try without transfer (fallback for non-transferable data)
-            if (error instanceof DOMException && error.name === "DataCloneError") {
-                console.warn(
-                    "[CAPTCHA Handler] postMessage failed with DataCloneError, retrying without transfer"
-                );
-                try {
-                    if (typeof targetOriginOrOptions === "object") {
-                        const options = { ...targetOriginOrOptions } as WindowPostMessageOptions;
-                        delete options.transfer;
-                        return originalPostMessage(message, options);
-                    }
-                    return originalPostMessage(message, targetOriginOrOptions || "*");
-                } catch (retryError) {
-                    console.error("[CAPTCHA Handler] postMessage retry failed:", retryError);
-                    throw retryError;
-                }
-            }
-            throw error;
-        }
-    };
-}
-
-/**
- * Filter transferable objects to ensure only valid ones are included
- */
-function filterValidTransferables(transfer: Transferable[]): Transferable[] {
-    return transfer.filter((item) => {
-        // Check for valid transferable types
-        return (
-            item instanceof ArrayBuffer ||
-            item instanceof MessagePort ||
-            (typeof ImageBitmap !== "undefined" && item instanceof ImageBitmap) ||
-            (typeof OffscreenCanvas !== "undefined" && item instanceof OffscreenCanvas) ||
-            (typeof ReadableStream !== "undefined" && item instanceof ReadableStream) ||
-            (typeof WritableStream !== "undefined" && item instanceof WritableStream) ||
-            (typeof TransformStream !== "undefined" && item instanceof TransformStream)
-        );
-    });
 }
 
 /**
