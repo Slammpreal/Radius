@@ -26,7 +26,7 @@
 
 Setting Up Raduius is simple and convinent, for (`pnpm`), run
 ```bash
-git clone https://github.com/RadiusProxy/Radius
+git clone https://github.com/sriail/Radius
 cd Radius
 pnpm i
 pnpm bstart
@@ -40,7 +40,7 @@ Radius will run on port 8080 by default, or 4321 for a dev environment (`pnpm de
 
 And for (`npm`), run
 ```bash
-git clone https://github.com/RadiusProxy/Radius
+git clone https://github.com/sriail/Radius
 cd Radius
 npm install
 npm run start
@@ -176,6 +176,7 @@ If you can not deploy, visit a example deployment with Radius using QuickDeploy 
 [proudparrot2](https://github.com/proudparrot2) - Founder and original dev of Radius <br>
 [MotorTruck1221](https://github.com/motortruck1221) - Astro rewrite and lead dev of Radius <br>
 [All of the contributors!](https://github.com/sriail/Radius/graphs/contributors)
+
 
 
 
