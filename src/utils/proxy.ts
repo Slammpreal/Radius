@@ -64,9 +64,14 @@ class SW {
     encodeURL(string: string): string {
         const proxy = this.#storageManager.getVal("proxy") as "uv" | "sj";
         const input = this.search(string, this.#storageManager.getVal("searchEngine"));
-        return proxy === "uv"
-            ? `${__uv$config.prefix}${__uv$config.encodeUrl!(input)}`
-            : this.#scramjetController!.encodeUrl(input);
+        
+        // If Scramjet is selected but controller isn't ready, fall back to UV
+        if (proxy === "sj" && this.#scramjetController) {
+            return this.#scramjetController.encodeUrl(input);
+        }
+        
+        // Default to UV encoding
+        return `${__uv$config.prefix}${__uv$config.encodeUrl!(input)}`;
     }
 
     async setTransport(transport?: "epoxy" | "libcurl", get?: boolean) {
